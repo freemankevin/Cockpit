@@ -153,8 +153,8 @@ class HardwareDetector:
             # 获取系统盘信息
             system_disk_total, system_disk_used = self._get_system_disk_info()
             
-            # 获取数据盘信息
-            data_disk_total, data_disk_used = self._get_data_disk_info()
+            # 获取数据盘信息 (现在返回3个值)
+            data_disk_total, data_disk_used, data_disk_name = self._get_data_disk_info()
 
             # 设置系统盘信息
             if system_disk_total > 0:
@@ -168,11 +168,13 @@ class HardwareDetector:
             if data_disk_total > 0:
                 self.system_info['data_disk_total'] = data_disk_total
                 self.system_info['data_disk_used'] = data_disk_used if data_disk_used > 0 else 0
+                self.system_info['data_disk_name'] = data_disk_name  # 新增：数据盘设备名
             else:
                 self.system_info['data_disk_total'] = None
                 self.system_info['data_disk_used'] = None
+                self.system_info['data_disk_name'] = None
 
-            logger.info(f"磁盘信息 | 系统盘={system_disk_total}GB, 数据盘={data_disk_total}GB")
+            logger.info(f"磁盘信息 | 系统盘={system_disk_total}GB, 数据盘={data_disk_total}GB, 设备={data_disk_name}")
 
         except Exception as e:
             logger.warning(f"磁盘信息获取失败 | {e}")
@@ -180,6 +182,7 @@ class HardwareDetector:
             self.system_info['system_disk_used'] = None
             self.system_info['data_disk_total'] = None
             self.system_info['data_disk_used'] = None
+            self.system_info['data_disk_name'] = None
 
     def _get_system_disk_info(self) -> tuple:
         """获取系统盘信息"""
@@ -271,43 +274,73 @@ class HardwareDetector:
         return (system_disk_total, system_disk_used)
 
     def _get_data_disk_info(self) -> tuple:
-        """获取数据盘信息"""
+        """获取数据盘信息 - 返回 (总容量, 已用容量, 设备名称)"""
         if not self.client:
-            return (0, 0)
+            return (0, 0, None)
             
         data_disk_total = 0
         data_disk_used = 0
+        data_disk_name = None
 
         try:
-            # 获取所有分区，排除根分区、tmpfs、devtmpfs 等
+            # 获取所有分区信息，包括设备名、大小、挂载点
+            # 格式: 设备名 总大小 已用大小 挂载点
             stdin, stdout, stderr = self.client.exec_command(
-                "df -h 2>/dev/null | grep -vE '^Filesystem|tmpfs|devtmpfs|overlay|/boot|/efi|snap' | awk '{print $2,$3,$6}'"
+                "df -h 2>/dev/null | grep -vE '^Filesystem|tmpfs|devtmpfs|overlay|/boot|/efi|snap' | awk '{print $1,$2,$3,$6}'"
             )
             output = stdout.read().decode().strip()
 
             if output:
                 lines = output.split('\n')
-                max_size = 0
+                disks = []
 
                 for line in lines:
                     parts = line.strip().split()
-                    if len(parts) >= 3:
+                    if len(parts) >= 4:
                         try:
-                            total = self._parse_disk_size(parts[0])
-                            used = self._parse_disk_size(parts[1])
-                            mount_point = parts[2]
+                            device = parts[0]  # 如 /dev/sdb1
+                            total = self._parse_disk_size(parts[1])
+                            used = self._parse_disk_size(parts[2])
+                            mount_point = parts[3]
 
-                            # 排除根分区，找最大的数据分区
-                            if mount_point != '/' and total > max_size:
-                                max_size = total
-                                data_disk_total = total
-                                data_disk_used = used
+                            # 排除根分区
+                            if mount_point != '/' and total > 0:
+                                # 提取设备名中的字母部分用于排序 (如 sdb, sdc, vdb, vdc)
+                                import re
+                                match = re.search(r'[sv]d([a-z])\d*', device)
+                                if match:
+                                    disk_letter = match.group(1)
+                                    disks.append({
+                                        'device': device,
+                                        'letter': disk_letter,
+                                        'total': total,
+                                        'used': used,
+                                        'mount_point': mount_point
+                                    })
                         except Exception:
                             continue
+                
+                # 按磁盘字母排序 (b, c, d...)
+                disks.sort(key=lambda x: x['letter'])
+                
+                # 选择第一个磁盘（按字母排序最前的）
+                if disks:
+                    first_disk = disks[0]
+                    data_disk_total = first_disk['total']
+                    data_disk_used = first_disk['used']
+                    data_disk_name = first_disk['device'].split('/')[-1]  # 只保留设备名，如 sdb1
+                    
+                    logger.info(f"数据盘选择 | 设备: {data_disk_name}, 字母: {first_disk['letter']}, 大小: {data_disk_total}GB")
+                    
+                    # 如果有多个数据盘，记录所有磁盘信息
+                    if len(disks) > 1:
+                        all_disks = [f"{d['device'].split('/')[-1]}({d['letter']}):{d['total']}G" for d in disks]
+                        logger.info(f"所有数据盘: {', '.join(all_disks)}")
+                        
         except Exception as e:
             logger.debug(f"获取数据盘信息失败: {e}")
 
-        return (data_disk_total, data_disk_used)
+        return (data_disk_total, data_disk_used, data_disk_name)
 
     @staticmethod
     def _parse_disk_size(size_str: str) -> float:

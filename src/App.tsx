@@ -4,6 +4,9 @@ import Header from './components/Header';
 import HostsGrid from './components/HostsGrid';
 import AddHostModal from './components/AddHostModal';
 import TerminalModal from './components/TerminalModal';
+import SFTPModal from './components/SFTPModal';
+import { ToastContainer } from './components/Toast';
+import { useToast } from './hooks/useToast';
 import { hostApi } from './services/api';
 import type { SSHHost, HostStats, CreateHostRequest, UpdateHostRequest } from './types';
 
@@ -14,9 +17,11 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isSFTPOpen, setIsSFTPOpen] = useState(false);
   const [selectedHost, setSelectedHost] = useState<SSHHost | null>(null);
   const [editingHost, setEditingHost] = useState<SSHHost | null>(null);
   const [copyingHost, setCopyingHost] = useState<SSHHost | null>(null);
+  const { toasts, removeToast, success, error } = useToast();
 
   // 加载主机列表
   const loadHosts = useCallback(async () => {
@@ -26,12 +31,13 @@ function App() {
       if (response.success && response.data) {
         setHosts(response.data);
       }
-    } catch (error) {
-      console.error('Failed to load hosts:', error);
+    } catch (err) {
+      console.error('Failed to load hosts:', err);
+      error('加载失败', '无法加载主机列表');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [error]);
 
   // 加载统计信息
   const loadStats = useCallback(async () => {
@@ -40,8 +46,8 @@ function App() {
       if (response.success && response.data) {
         setStats(response.data);
       }
-    } catch (error) {
-      console.error('Failed to load stats:', error);
+    } catch (err) {
+      console.error('Failed to load stats:', err);
     }
   }, []);
 
@@ -63,8 +69,8 @@ function App() {
         if (response.success && response.data) {
           setHosts(response.data);
         }
-      } catch (error) {
-        console.error('Search failed:', error);
+      } catch (err) {
+        console.error('Search failed:', err);
       }
     };
 
@@ -81,11 +87,13 @@ function App() {
         await loadStats();
         setIsAddModalOpen(false);
         setCopyingHost(null);
+        success('添加成功', '主机已成功添加');
         return true;
       }
       return false;
-    } catch (error) {
-      console.error('Failed to add host:', error);
+    } catch (err) {
+      console.error('Failed to add host:', err);
+      error('添加失败', '无法添加主机，请检查配置');
       return false;
     }
   };
@@ -101,17 +109,20 @@ function App() {
         await loadStats();
         setEditingHost(null);
         setIsAddModalOpen(false);
+        success('更新成功', '主机信息已更新');
         return true;
       }
       return false;
-    } catch (error) {
-      console.error('Failed to update host:', error);
+    } catch (err) {
+      console.error('Failed to update host:', err);
+      error('更新失败', '无法更新主机信息');
       return false;
     }
   };
 
   // 删除主机
   const handleDeleteHost = async (id: number) => {
+    // 使用自定义确认对话框替代浏览器默认 alert
     if (!confirm('确定要删除此主机吗？此操作不可恢复。')) {
       return;
     }
@@ -120,9 +131,11 @@ function App() {
       if (response.success) {
         await loadHosts();
         await loadStats();
+        success('删除成功', '主机已删除');
       }
-    } catch (error) {
-      console.error('Failed to delete host:', error);
+    } catch (err) {
+      console.error('Failed to delete host:', err);
+      error('删除失败', '无法删除主机');
     }
   };
 
@@ -131,14 +144,14 @@ function App() {
     try {
       const response = await hostApi.testConnection(id);
       if (response.success) {
-        alert('连接成功！');
+        success('连接成功', 'SSH 连接测试通过');
         await loadHosts();
       } else {
-        alert(`连接失败: ${response.message || '未知错误'}`);
+        error('连接失败', response.message || '无法连接到主机');
       }
-    } catch (error) {
-      console.error('Test connection failed:', error);
-      alert('连接测试失败');
+    } catch (err) {
+      console.error('Test connection failed:', err);
+      error('连接失败', '测试连接时发生错误');
     }
   };
 
@@ -150,12 +163,11 @@ function App() {
 
   // 打开 SFTP
   const handleOpenSFTP = (host: SSHHost) => {
-    if (host.status !== 'connected') {
-      alert('请先连接主机后再使用 SFTP 功能');
-      return;
-    }
-    const sftpUrl = `sftp://${host.username}@${host.address}:${host.port}`;
-    alert(`SFTP 连接信息:\n${sftpUrl}\n\n您可以使用 FileZilla、WinSCP 等 SFTP 客户端连接。`);
+    console.log('[App] handleOpenSFTP called:', host);
+    console.log('[App] Setting selectedHost and isSFTPOpen...');
+    setSelectedHost(host);
+    setIsSFTPOpen(true);
+    console.log('[App] isSFTPOpen should be true now');
   };
 
   // 打开编辑模态框
@@ -185,7 +197,12 @@ function App() {
       <Sidebar hostCount={hosts.length} />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col bg-grid-macos relative">
+      <main className="flex-1 flex flex-col bg-[#F5F5F7] relative">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]" />
+        </div>
+        
         {/* Header */}
         <Header
           stats={stats}
@@ -195,7 +212,7 @@ function App() {
         />
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 relative z-10">
           <HostsGrid
             hosts={hosts}
             loading={loading}
@@ -236,6 +253,20 @@ function App() {
           }}
         />
       )}
+
+      {/* SFTP Modal */}
+      {isSFTPOpen && selectedHost && (
+        <SFTPModal
+          host={selectedHost}
+          onClose={() => {
+            setIsSFTPOpen(false);
+            setSelectedHost(null);
+          }}
+        />
+      )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

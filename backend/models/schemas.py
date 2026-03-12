@@ -65,6 +65,7 @@ class HostUpdate(BaseModel):
     system_disk_used: Optional[float] = None   # 系统盘已用(GB)
     data_disk_total: Optional[float] = None    # 数据盘总容量(GB)
     data_disk_used: Optional[float] = None     # 数据盘已用(GB)
+    data_disk_name: Optional[str] = None       # 数据盘设备名(如sdb1)
     last_seen: Optional[str] = None
 
 
@@ -83,6 +84,7 @@ class HostResponse(HostBase):
     system_disk_used: Optional[float] = None   # 系统盘已用(GB)
     data_disk_total: Optional[float] = None    # 数据盘总容量(GB)
     data_disk_used: Optional[float] = None     # 数据盘已用(GB)
+    data_disk_name: Optional[str] = None       # 数据盘设备名(如sdb1)
     last_seen: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

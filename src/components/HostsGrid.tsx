@@ -13,11 +13,8 @@ import {
   HardDrive,
   MemoryStick,
   Key,
-  Lock,
   Check,
-  Plus,
-  Power,
-  RefreshCw
+  Plus
 } from 'lucide-react';
 import type { SSHHost } from '@/types';
 import OSIcon, { getOSLabel } from './OSIcon';
@@ -48,29 +45,32 @@ const HostsGrid = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
 
-  // 获取状态样式
+  // 获取状态样式 - Mac 风格
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'connected':
         return {
           dot: 'bg-emerald-500',
+          glow: 'shadow-emerald-500/20',
           label: '运行中',
           badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          border: 'hover:border-emerald-300'
+          border: 'border-emerald-200'
         };
       case 'warning':
         return {
           dot: 'bg-amber-500',
+          glow: 'shadow-amber-500/20',
           label: '警告',
           badge: 'bg-amber-50 text-amber-700 border-amber-200',
-          border: 'hover:border-amber-300'
+          border: 'border-amber-200'
         };
       default:
         return {
           dot: 'bg-gray-400',
+          glow: 'shadow-gray-400/20',
           label: '已停止',
-          badge: 'bg-gray-50 text-gray-600 border-gray-200',
-          border: 'hover:border-gray-300'
+          badge: 'bg-gray-100 text-gray-600 border-gray-200',
+          border: 'border-gray-200'
         };
     }
   };
@@ -102,6 +102,27 @@ const HostsGrid = ({
     return `${used?.toFixed(0) || '0'}/${total.toFixed(0)}G`;
   };
 
+  // 获取要展示的磁盘信息 - 优先数据盘，并显示设备名
+  const getDiskDisplay = (host: SSHHost) => {
+    // 优先显示数据盘
+    if (host.data_disk_total && host.data_disk_total > 0) {
+      // 显示数据盘设备名（如 sdb1）
+      const diskName = host.data_disk_name || '数据盘';
+      return {
+        label: diskName,
+        value: formatDisk(host.data_disk_used, host.data_disk_total)
+      };
+    }
+    // 无数据盘则显示系统盘
+    if (host.system_disk_total && host.system_disk_total > 0) {
+      return {
+        label: '系统盘',
+        value: formatDisk(host.system_disk_used, host.system_disk_total)
+      };
+    }
+    return { label: '磁盘', value: '-' };
+  };
+
   // 处理复制主机
   const handleCopyHost = (host: SSHHost) => {
     if (onCopyHost) {
@@ -117,21 +138,21 @@ const HostsGrid = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white rounded-lg border border-gray-200 p-5 animate-pulse">
+          <div key={i} className="rounded-2xl bg-white border border-gray-200 p-5 animate-pulse">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg" />
+                <div className="w-10 h-10 bg-gray-200 rounded-xl" />
                 <div>
-                  <div className="h-4 bg-gray-100 rounded w-24 mb-2" />
-                  <div className="h-3 bg-gray-100 rounded w-32" />
+                  <div className="h-4 bg-gray-200 rounded-lg w-24 mb-2" />
+                  <div className="h-3 bg-gray-200 rounded-lg w-32" />
                 </div>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="h-3 bg-gray-100 rounded w-full" />
-              <div className="h-3 bg-gray-100 rounded w-3/4" />
+              <div className="h-3 bg-gray-200 rounded-lg w-full" />
+              <div className="h-3 bg-gray-200 rounded-lg w-3/4" />
             </div>
           </div>
         ))}
@@ -141,49 +162,60 @@ const HostsGrid = ({
 
   return (
     <>
-      {/* Stats Bar */}
-      <div className="flex items-center gap-6 mb-5 px-1">
+      {/* Stats Bar - Mac 风格 */}
+      <div className="flex items-center gap-6 mb-6 px-2">
         <div className="flex items-center gap-2">
-          <Server className="w-4 h-4 text-gray-400" />
-          <span className="text-[13px] text-gray-600">总主机</span>
+          <Server className="w-4 h-4 text-gray-500" />
+          <span className="text-[13px] text-gray-500">总主机</span>
           <span className="text-[13px] font-semibold text-gray-900">{hosts.length}</span>
         </div>
-        <div className="w-px h-4 bg-gray-200" />
+        <div className="w-px h-4 bg-gray-300" />
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          <span className="text-[13px] text-gray-600">在线</span>
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span className="text-[13px] text-gray-500">在线</span>
           <span className="text-[13px] font-semibold text-emerald-600">
             {hosts.filter(h => h.status === 'connected').length}
           </span>
         </div>
-        <div className="w-px h-4 bg-gray-200" />
+        <div className="w-px h-4 bg-gray-300" />
         <div className="flex items-center gap-2">
-          <Key className="w-4 h-4 text-purple-500" />
-          <span className="text-[13px] text-gray-600">密钥认证</span>
+          <Key className="w-4 h-4 text-purple-600" />
+          <span className="text-[13px] text-gray-500">密钥认证</span>
           <span className="text-[13px] font-semibold text-purple-600">
             {hosts.filter(h => h.auth_type === 'key').length}
           </span>
         </div>
       </div>
 
-      {/* Host Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {/* Host Cards Grid - Mac Light Style */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {hosts.map((host) => {
           const statusConfig = getStatusConfig(host.status);
-          const isActive = host.status === 'connected';
+          const diskInfo = getDiskDisplay(host);
 
           return (
             <div
               key={host.id}
-              className={`bg-white rounded-lg border border-gray-200 ${statusConfig.border}
-                        transition-all duration-200 hover:shadow-md group relative`}
+              className={`
+                group relative rounded-2xl overflow-hidden
+                bg-white
+                border border-gray-200
+                shadow-[0_2px_8px_rgba(0,0,0,0.04)]
+                hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]
+                hover:border-gray-300
+                transition-all duration-300
+                ${statusConfig.glow}
+              `}
             >
+              {/* Status Glow Effect */}
+              <div className={`absolute top-0 right-0 w-32 h-32 ${statusConfig.dot} opacity-5 blur-[60px] rounded-full`} />
+              
               {/* Card Header */}
-              <div className="p-4 border-b border-gray-100">
+              <div className="p-5 border-b border-gray-100">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     {/* OS Icon */}
-                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 
+                    <div className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 
                                   flex items-center justify-center flex-shrink-0">
                       <OSIcon
                         osKey={host.os_key}
@@ -206,7 +238,7 @@ const HostsGrid = ({
                           title="复制IP"
                         >
                           {copiedField === `host-${host.id}-ip` ? (
-                            <Check className="w-3 h-3 text-emerald-500" />
+                            <Check className="w-3 h-3 text-emerald-600" />
                           ) : (
                             <Copy className="w-3 h-3" />
                           )}
@@ -217,9 +249,9 @@ const HostsGrid = ({
 
                   {/* Status & Menu */}
                   <div className="flex items-center gap-2">
-                    <span className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] 
+                    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] 
                                     font-medium border ${statusConfig.badge}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot} animate-pulse`} />
                       {statusConfig.label}
                     </span>
                     
@@ -227,22 +259,24 @@ const HostsGrid = ({
                     <div className="relative">
                       <button
                         onClick={() => setActiveMenu(activeMenu === host.id ? null : host.id)}
-                        className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 
+                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 
                                  opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
                       
-                      {/* Dropdown Menu */}
+                      {/* Dropdown Menu - Mac Style */}
                       {activeMenu === host.id && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={handleClickOutside} />
-                          <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg 
-                                        border border-gray-200 shadow-lg z-20 py-1">
+                          <div className="absolute right-0 top-full mt-1 w-40 
+                                        bg-white
+                                        rounded-xl border border-gray-200 
+                                        shadow-[0_8px_24px_rgba(0,0,0,0.12)] z-20 py-1.5">
                             <button
                               onClick={() => { onEdit(host); setActiveMenu(null); }}
                               className="w-full px-3 py-2 text-left text-[13px] text-gray-700 
-                                       hover:bg-gray-50 flex items-center gap-2"
+                                       hover:bg-gray-50 flex items-center gap-2 transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                               编辑
@@ -250,7 +284,7 @@ const HostsGrid = ({
                             <button
                               onClick={() => handleCopyHost(host)}
                               className="w-full px-3 py-2 text-left text-[13px] text-gray-700 
-                                       hover:bg-gray-50 flex items-center gap-2"
+                                       hover:bg-gray-50 flex items-center gap-2 transition-colors"
                             >
                               <Copy className="w-3.5 h-3.5" />
                               复制
@@ -258,16 +292,16 @@ const HostsGrid = ({
                             <button
                               onClick={() => { onTestConnection(host.id); setActiveMenu(null); }}
                               className="w-full px-3 py-2 text-left text-[13px] text-gray-700 
-                                       hover:bg-gray-50 flex items-center gap-2"
+                                       hover:bg-gray-50 flex items-center gap-2 transition-colors"
                             >
-                              <RefreshCw className="w-3.5 h-3.5" />
+                              <Plug className="w-3.5 h-3.5" />
                               测试连接
                             </button>
                             <div className="border-t border-gray-100 my-1" />
                             <button
                               onClick={() => { onDelete(host.id); setActiveMenu(null); }}
                               className="w-full px-3 py-2 text-left text-[13px] text-red-600 
-                                       hover:bg-red-50 flex items-center gap-2"
+                                       hover:bg-red-50 flex items-center gap-2 transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               删除
@@ -281,61 +315,56 @@ const HostsGrid = ({
               </div>
 
               {/* Card Body - Specs */}
-              <div className="p-4">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="p-5">
+                <div className="grid grid-cols-2 gap-4">
                   {/* CPU */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-md bg-blue-50 flex items-center justify-center">
-                      <Cpu className="w-3.5 h-3.5 text-blue-500" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100">
+                      <Cpu className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
                       <div className="text-[11px] text-gray-400">CPU</div>
-                      <div className="text-[12px] font-medium text-gray-700">
+                      <div className="text-[12px] font-medium text-gray-900">
                         {host.cpu_cores && host.cpu_cores > 0 ? `${host.cpu_cores} 核` : '-'}
                       </div>
                     </div>
                   </div>
 
                   {/* Memory */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center">
-                      <MemoryStick className="w-3.5 h-3.5 text-emerald-500" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                      <MemoryStick className="w-4 h-4 text-emerald-600" />
                     </div>
                     <div>
                       <div className="text-[11px] text-gray-400">内存</div>
-                      <div className="text-[12px] font-medium text-gray-700">
+                      <div className="text-[12px] font-medium text-gray-900">
                         {formatMemory(host.memory_gb)}
                       </div>
                     </div>
                   </div>
 
-                  {/* Disk */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-md bg-amber-50 flex items-center justify-center">
-                      <HardDrive className="w-3.5 h-3.5 text-amber-500" />
+                  {/* Disk - 优先数据盘 */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center border border-amber-100">
+                      <HardDrive className="w-4 h-4 text-amber-600" />
                     </div>
                     <div>
-                      <div className="text-[11px] text-gray-400">系统盘</div>
-                      <div className="text-[12px] font-medium text-gray-700">
-                        {formatDisk(host.system_disk_used, host.system_disk_total)}
+                      <div className="text-[11px] text-gray-400">{diskInfo.label}</div>
+                      <div className="text-[12px] font-medium text-gray-900">
+                        {diskInfo.value}
                       </div>
                     </div>
                   </div>
 
-                  {/* Auth */}
-                  <div className="flex items-center gap-2">
-                    <div className={`w-7 h-7 rounded-md flex items-center justify-center 
-                                  ${host.auth_type === 'key' ? 'bg-purple-50' : 'bg-gray-50'}`}>
-                      {host.auth_type === 'key' ? (
-                        <Key className="w-3.5 h-3.5 text-purple-500" />
-                      ) : (
-                        <Lock className="w-3.5 h-3.5 text-gray-500" />
-                      )}
+                  {/* Architecture - 替代认证方式 */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100">
+                      <Cpu className="w-4 h-4 text-purple-600" />
                     </div>
                     <div>
-                      <div className="text-[11px] text-gray-400">认证</div>
-                      <div className="text-[12px] font-medium text-gray-700">
-                        {host.auth_type === 'key' ? '密钥' : '密码'}
+                      <div className="text-[11px] text-gray-400">架构</div>
+                      <div className="text-[12px] font-medium text-gray-900">
+                        {host.architecture || '-'}
                       </div>
                     </div>
                   </div>
@@ -343,16 +372,16 @@ const HostsGrid = ({
 
                 {/* OS Info */}
                 {host.system_type && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="mt-4 pt-4 border-t border-gray-100">
                     <div className="flex items-center justify-between text-[12px]">
                       <span className="text-gray-400">操作系统</span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <OSIcon osKey={host.os_key} systemType={host.system_type} size="sm" />
                         <span className="text-gray-700">{getOSLabel(host.os_key, host.system_type)}</span>
                       </div>
                     </div>
                     {host.os_version && (
-                      <div className="flex items-center justify-between text-[12px] mt-1.5">
+                      <div className="flex items-center justify-between text-[12px] mt-2">
                         <span className="text-gray-400">版本</span>
                         <span className="text-gray-700 font-mono text-[11px]">{host.os_version}</span>
                       </div>
@@ -362,24 +391,38 @@ const HostsGrid = ({
               </div>
 
               {/* Card Footer - Actions */}
-              <div className="px-4 pb-4">
-                <div className="flex gap-2">
+              <div className="px-5 pb-5">
+                <div className="flex gap-3">
                   <button
                     onClick={() => onOpenTerminal(host)}
-                    className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white 
-                             rounded-md text-[12px] font-medium transition-colors
-                             flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 px-4 
+                             bg-blue-600 hover:bg-blue-700
+                             text-white rounded-xl text-[12px] font-medium 
+                             transition-all duration-200 
+                             flex items-center justify-center gap-2
+                             border border-blue-600
+                             shadow-[0_4px_12px_rgba(59,130,246,0.2)]
+                             hover:shadow-[0_4px_16px_rgba(59,130,246,0.3)]"
                   >
                     <Terminal className="w-3.5 h-3.5" />
                     终端
                   </button>
                   <button
-                    onClick={() => onOpenSFTP && onOpenSFTP(host)}
-                    disabled={!onOpenSFTP || !isActive}
-                    className="flex-1 py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 
-                             rounded-md text-[12px] font-medium transition-colors
-                             flex items-center justify-center gap-1.5
-                             disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      console.log('[HostsGrid] SFTP button clicked, host:', host);
+                      console.log('[HostsGrid] onOpenSFTP exists:', !!onOpenSFTP);
+                      if (onOpenSFTP) {
+                        onOpenSFTP(host);
+                      }
+                    }}
+                    disabled={!onOpenSFTP}
+                    className="flex-1 py-2.5 px-4
+                             bg-gray-100 hover:bg-gray-200
+                             text-gray-700 rounded-xl text-[12px] font-medium
+                             transition-all duration-200
+                             flex items-center justify-center gap-2
+                             border border-gray-200
+                             disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <FolderOpen className="w-3.5 h-3.5" />
                     SFTP
@@ -390,19 +433,22 @@ const HostsGrid = ({
           );
         })}
 
-        {/* Add New Host Card */}
+        {/* Add New Host Card - Mac Style */}
         <button
           onClick={onAddHost}
-          className="bg-white rounded-lg border-2 border-dashed border-gray-200 
-                   hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-200
-                   min-h-[280px] flex flex-col items-center justify-center gap-3 group"
+          className="rounded-2xl border border-dashed border-gray-300 
+                   hover:border-gray-400 hover:bg-gray-50
+                   transition-all duration-300
+                   min-h-[320px] flex flex-col items-center justify-center gap-4 group"
         >
-          <div className="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-blue-100 
-                        flex items-center justify-center transition-colors">
-            <Plus className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors" />
+          <div className="w-14 h-14 rounded-2xl bg-gray-100 group-hover:bg-gray-200 
+                        flex items-center justify-center transition-all duration-300
+                        border border-gray-200 group-hover:border-gray-300
+                        shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+            <Plus className="w-7 h-7 text-gray-500 group-hover:text-gray-700 transition-colors" />
           </div>
           <div className="text-center">
-            <div className="text-[14px] font-medium text-gray-600 group-hover:text-blue-600 transition-colors">
+            <div className="text-[15px] font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
               添加主机
             </div>
             <div className="text-[12px] text-gray-400 mt-1">

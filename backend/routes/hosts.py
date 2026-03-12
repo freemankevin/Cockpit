@@ -125,6 +125,7 @@ async def add_host(host_data: HostCreate):
                         ('system_disk_used', 'system_disk_used'),
                         ('data_disk_total', 'data_disk_total'),
                         ('data_disk_used', 'data_disk_used'),
+                        ('data_disk_name', 'data_disk_name'),
                     ]
                     
                     for src_key, dst_key in optional_fields:
@@ -278,6 +279,7 @@ async def test_connection(host_id: int):
                 ('system_disk_used', 'system_disk_used'),
                 ('data_disk_total', 'data_disk_total'),
                 ('data_disk_used', 'data_disk_used'),
+                ('data_disk_name', 'data_disk_name'),
             ]
             
             for src_key, dst_key in optional_fields:

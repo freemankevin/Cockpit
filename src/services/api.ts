@@ -142,4 +142,84 @@ export const terminalApi = {
   },
 };
 
+// ==================== SFTP API ====================
+
+export interface SFTPFile {
+  name: string;
+  path: string;
+  size: number;
+  size_formatted: string;
+  is_dir: boolean;
+  is_link: boolean;
+  modified_time: string;
+  modified_time_formatted: string;
+  permissions: string;
+  owner: string;
+  group: string;
+}
+
+export interface SFTPListResponse {
+  success: boolean;
+  path: string;
+  files: SFTPFile[];
+  error?: string;
+}
+
+export const sftpApi = {
+  // 连接 SFTP
+  connect: (hostId: number) =>
+    api.post<unknown, ApiResponse<void>>('/sftp/connect', { host_id: hostId }),
+
+  // 断开 SFTP
+  disconnect: (hostId: number) =>
+    api.post<unknown, ApiResponse<void>>('/sftp/disconnect', { host_id: hostId }),
+
+  // 列出目录
+  listDirectory: (hostId: number, path: string = '.') =>
+    api.post<unknown, SFTPListResponse>('/sftp/list', { host_id: hostId, path }),
+
+  // 创建目录
+  createDirectory: (hostId: number, path: string) =>
+    api.post<unknown, ApiResponse<void>>('/sftp/mkdir', { host_id: hostId, path }),
+
+  // 删除文件/目录
+  remove: (hostId: number, path: string, recursive: boolean = false) =>
+    api.post<unknown, ApiResponse<void>>('/sftp/remove', { host_id: hostId, path, recursive }),
+
+  // 重命名
+  rename: (hostId: number, oldPath: string, newPath: string) =>
+    api.post<unknown, ApiResponse<void>>('/sftp/rename', { host_id: hostId, old_path: oldPath, new_path: newPath }),
+
+  // 上传文件
+  uploadFile: (hostId: number, remotePath: string, file: File) => {
+    const formData = new FormData();
+    formData.append('host_id', hostId.toString());
+    formData.append('remote_path', remotePath);
+    formData.append('file', file);
+    return api.post<unknown, ApiResponse<void>>('/sftp/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // 下载文件
+  downloadFile: (hostId: number, remotePath: string) =>
+    api.post<unknown, Blob>('/sftp/download', { host_id: hostId, path: remotePath }, {
+      responseType: 'blob',
+    }),
+
+  // 读取文件内容
+  readFile: (hostId: number, remotePath: string) =>
+    api.post<unknown, { success: boolean; content: string; size: number; error?: string }>('/sftp/read', { host_id: hostId, path: remotePath }),
+
+  // 写入文件内容
+  writeFile: (hostId: number, remotePath: string, content: string) =>
+    api.post<unknown, ApiResponse<void>>('/sftp/write', { host_id: hostId, path: remotePath, content }),
+
+  // 获取磁盘使用情况
+  getDiskUsage: (hostId: number, path: string = '/') =>
+    api.post<unknown, { success: boolean; filesystem: string; size: string; used: string; available: string; use_percentage: string; error?: string }>('/sftp/disk-usage', { host_id: hostId, path }),
+};
+
 export default api;

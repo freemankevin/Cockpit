@@ -22,6 +22,7 @@ export interface SSHHost {
   system_disk_used?: number;   // 系统盘已用(GB)
   data_disk_total?: number;    // 数据盘总容量(GB)
   data_disk_used?: number;     // 数据盘已用(GB)
+  data_disk_name?: string;     // 数据盘设备名(如sdb1)
   last_seen?: string;
   created_at?: string;
   updated_at?: string;

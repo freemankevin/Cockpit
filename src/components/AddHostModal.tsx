@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Key, Lock, Plug, Copy, Server, User, Globe, Hash } from 'lucide-react';
+import { X, Key, Lock, Plug, Copy, Server, User, Globe, Hash, Eye, EyeOff } from 'lucide-react';
 import type { SSHHost, CreateHostRequest, UpdateHostRequest, SSHKey } from '@/types';
 import { keyApi } from '@/services/api';
 
@@ -13,6 +13,7 @@ interface AddHostModalProps {
 const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProps) => {
   const [loading, setLoading] = useState(false);
   const [keys, setKeys] = useState<SSHKey[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -343,17 +344,33 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
                 <Lock className="w-3.5 h-3.5 text-gray-400" />
                 密码
               </label>
-              <input
-                type="password"
-                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl
-                         text-[13px] text-gray-900 placeholder-gray-400
-                         transition-all duration-200
-                         focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
-                         hover:border-gray-300"
-                placeholder={host ? "留空保持原密码不变" : "输入密码"}
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="w-full px-3 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl
+                           text-[13px] text-gray-900 placeholder-gray-400
+                           transition-all duration-200
+                           focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
+                           hover:border-gray-300"
+                  placeholder={host ? "留空保持原密码不变" : "输入密码"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1
+                           text-gray-400 hover:text-gray-600
+                           transition-colors rounded-md hover:bg-gray-100"
+                  title={showPassword ? "隐藏密码" : "显示密码"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
           )}
 

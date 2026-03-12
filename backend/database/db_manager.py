@@ -23,9 +23,9 @@ class DatabaseManager:
             # 默认数据库路径
             db_dir = Path(__file__).parent.parent / 'data'
             db_dir.mkdir(exist_ok=True)
-            db_path = db_dir / 'deploymaster.db'
+            db_path = str(db_dir / 'deploymaster.db')
         
-        self.db_path = str(db_path)
+        self.db_path = db_path
         self._init_tables()
     
     @contextmanager
@@ -91,6 +91,7 @@ class DatabaseManager:
                 ('system_disk_used', 'REAL'),   # 系统盘已用(GB)
                 ('data_disk_total', 'REAL'),    # 数据盘总容量(GB)
                 ('data_disk_used', 'REAL'),     # 数据盘已用(GB)
+                ('data_disk_name', 'TEXT'),     # 数据盘设备名
             ]
             for col_name, col_type in new_columns:
                 try:
@@ -189,13 +190,13 @@ class DatabaseManager:
             cursor = conn.cursor()
             
             # 构建更新语句
-            allowed_fields = ['name', 'address', 'port', 'username', 
-                            'auth_type', 'password', 'private_key', 
-                            'key_passphrase', 'tags', 'status', 
+            allowed_fields = ['name', 'address', 'port', 'username',
+                            'auth_type', 'password', 'private_key',
+                            'key_passphrase', 'tags', 'status',
                             'system_type', 'os_key', 'last_seen',
                             'kernel_version', 'architecture', 'cpu_cores', 'memory_gb',
                             'os_version', 'system_disk_total', 'system_disk_used',
-                            'data_disk_total', 'data_disk_used']
+                            'data_disk_total', 'data_disk_used', 'data_disk_name']
             
             set_clauses = []
             values = []

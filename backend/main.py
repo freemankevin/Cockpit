@@ -24,7 +24,7 @@ project_root = Path(__file__).parent.absolute()
 sys.path.insert(0, str(project_root))
 
 from database.db_manager import db_manager
-from routes import hosts_router, keys_router, terminal_router
+from routes import hosts_router, keys_router, terminal_router, sftp_router
 from utils.logger import get_logger, configure_logging, api_logger
 
 # 配置日志
@@ -182,6 +182,7 @@ def create_app() -> FastAPI:
     app.include_router(hosts_router, prefix="/api")
     app.include_router(keys_router, prefix="/api")
     app.include_router(terminal_router, prefix="/api")
+    app.include_router(sftp_router, prefix="/api")
     
     # 根路径
     @app.get("/")

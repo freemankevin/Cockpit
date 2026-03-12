@@ -28,7 +28,7 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
   ];
 
   return (
-    <aside className="w-64 bg-[#F5F5F7] border-r border-gray-200/60 flex flex-col">
+    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* Logo Section */}
       <div className="p-5">
         <div className="flex items-center gap-3 group cursor-pointer">
@@ -55,24 +55,24 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
               <a
                 key={item.label}
                 href="#"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium
-                  transition-all duration-200 ease-macos group
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium
+                  transition-all duration-200 group
                   ${item.active 
-                    ? 'bg-white text-blue-600 shadow-sm border border-gray-200/50' 
-                    : 'text-gray-600 hover:bg-white/60 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <item.icon className={`w-[18px] h-[18px] transition-colors duration-200
-                  ${item.active ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-600'}`} 
+                  ${item.active ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} 
                 />
                 <span className="flex-1">{item.label}</span>
                 {item.badge && (
-                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-semibold rounded-md">
+                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-semibold rounded-md">
                     {item.badge}
                   </span>
                 )}
                 {item.active && (
-                  <ChevronRight className="w-3.5 h-3.5 text-blue-400" />
+                  <ChevronRight className="w-3.5 h-3.5 text-blue-600" />
                 )}
               </a>
             ))}
@@ -89,15 +89,15 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
               <a
                 key={item.label}
                 href="#"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium
-                  transition-all duration-200 ease-macos group
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium
+                  transition-all duration-200 group
                   ${item.active 
-                    ? 'bg-white text-blue-600 shadow-sm border border-gray-200/50' 
-                    : 'text-gray-600 hover:bg-white/60 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <item.icon className={`w-[18px] h-[18px] transition-colors duration-200
-                  ${item.active ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-600'}`} 
+                  ${item.active ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} 
                 />
                 <span>{item.label}</span>
               </a>
@@ -107,12 +107,12 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
       </nav>
 
       {/* User Profile */}
-      <div className="p-3 border-t border-gray-200/60">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white border border-gray-200/50 shadow-sm
-                      hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer group">
+      <div className="p-3 border-t border-gray-200">
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200
+                      hover:bg-gray-100 transition-all duration-200 cursor-pointer group">
           {/* Avatar */}
           <div className="relative">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center
                           shadow-sm group-hover:shadow-md transition-shadow duration-200">
               <span className="text-white text-xs font-semibold">A</span>
             </div>
@@ -124,7 +124,7 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
             <p className="text-[11px] text-gray-500 truncate">admin@deploymaster.io</p>
           </div>
           
-          <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg 
+          <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg 
                            transition-all duration-200 opacity-0 group-hover:opacity-100">
             <LogOut className="w-4 h-4" />
           </button>
