@@ -158,7 +158,7 @@ class SFTPService:
                         "is_dir": f.is_dir,
                         "is_link": f.is_link,
                         "modified_time": f.modified_time.isoformat(),
-                        "modified_time_formatted": f.modified_time.strftime("%Y-%m-%d %H:%M"),
+                        "modified_time_formatted": f.modified_time.strftime("%Y-%m-%d %H:%M:%S"),
                         "permissions": f.permissions,
                         "owner": f.owner,
                         "group": f.group
