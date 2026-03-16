@@ -149,19 +149,27 @@ const TransferPanel = ({
                       <span>{formatFileSize(task.transferred)} / {formatFileSize(task.size)}</span>
                       <span className="font-medium text-blue-400">{task.speed}</span>
                     </div>
-                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          task.status === 'transferring' ? 'bg-gradient-to-r from-blue-500 to-blue-400' : 
-                          task.status === 'paused' ? 'bg-amber-400' :
-                          'bg-gray-500'
-                        }`}
-                        style={{ width: `${task.progress}%` }}
-                      />
+                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                      {task.progress > 0 ? (
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            task.status === 'transferring' ? 'bg-gradient-to-r from-blue-500 to-blue-400' :
+                            task.status === 'paused' ? 'bg-amber-400' :
+                            'bg-gray-500'
+                          }`}
+                          style={{ width: `${task.progress}%` }}
+                        />
+                      ) : (
+                        // 进度为0%时显示加载动画
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="h-full w-full bg-gradient-to-r from-transparent via-blue-500/30 to-transparent animate-shimmer"
+                               style={{ animation: 'shimmer 1.5s infinite' }} />
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] text-gray-500">
-                        {task.status === 'transferring' ? 'Transferring' :
+                        {task.status === 'transferring' ? (task.progress > 0 ? 'Transferring' : 'Initializing...') :
                          task.status === 'paused' ? 'Paused' : 'Pending'}
                       </span>
                       <span className="text-[11px] font-medium text-gray-400">{task.progress}%</span>

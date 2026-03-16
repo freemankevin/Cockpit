@@ -3,7 +3,7 @@ SFTP 路由
 处理 SFTP 文件管理相关请求
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
@@ -11,6 +11,9 @@ import io
 import tempfile
 import os
 import zipfile
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 from database.db_manager import db_manager
 from services.ssh_service.sftp import create_sftp_service, SFTPService
@@ -232,31 +235,38 @@ def format_size(size) -> str:
 
 # 进度追踪存储（用于 WebSocket 推送）
 upload_progress_store: dict = {}  # {upload_id: {stage, progress, bytes_sent, total_bytes, speed}}
+progress_lock = threading.Lock()  # 线程锁，确保进度更新的线程安全
+
+# 线程池执行器，用于执行阻塞的SFTP操作
+sftp_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="sftp_upload")
 
 
 def get_upload_progress(upload_id: str) -> dict:
     """获取上传进度"""
-    return upload_progress_store.get(upload_id, {"status": "not_found"})
+    with progress_lock:
+        return upload_progress_store.get(upload_id, {"status": "not_found"})
 
 
 def update_upload_progress(upload_id: str, **kwargs):
-    """更新上传进度"""
-    if upload_id not in upload_progress_store:
-        upload_progress_store[upload_id] = {
-            "stage": "init",
-            "progress": 0,
-            "bytes_sent": 0,
-            "total_bytes": 0,
-            "speed": "0 B/s",
-            "message": ""
-        }
-    upload_progress_store[upload_id].update(kwargs)
+    """更新上传进度（线程安全）"""
+    with progress_lock:
+        if upload_id not in upload_progress_store:
+            upload_progress_store[upload_id] = {
+                "stage": "init",
+                "progress": 0,
+                "bytes_sent": 0,
+                "total_bytes": 0,
+                "speed": "0 B/s",
+                "message": ""
+            }
+        upload_progress_store[upload_id].update(kwargs)
 
 
 def clear_upload_progress(upload_id: str):
     """清除上传进度"""
-    if upload_id in upload_progress_store:
-        del upload_progress_store[upload_id]
+    with progress_lock:
+        if upload_id in upload_progress_store:
+            del upload_progress_store[upload_id]
 
 
 @router.get("/upload-progress/{upload_id}")
@@ -394,41 +404,39 @@ async def upload_file(
         # ========== 阶段2: SFTP上传 (进度 50% - 100%) ==========
         update_upload_progress(upload_id, stage="transferring", message="正在传输到服务器...")
         
-        try:
-            # 构建远程文件路径
-            if '/' in filename or '\\' in filename:
-                relative_path = filename.replace('\\', '/')
-                if relative_path.startswith('./'):
-                    relative_path = relative_path[2:]
-                remote_file_path = f"{remote_path}/{relative_path}".replace('//', '/')
-                
-                dir_path = os.path.dirname(remote_file_path)
-                if dir_path and dir_path != remote_path:
-                    try:
-                        if sftp.ssh_conn and sftp.ssh_conn.client:
-                            sftp.ssh_conn.client.exec_command(f'mkdir -p "{dir_path}"')
-                    except:
-                        pass
-            else:
-                remote_file_path = f"{remote_path}/{filename}".replace('//', '/')
+        # 构建远程文件路径
+        if '/' in filename or '\\' in filename:
+            relative_path = filename.replace('\\', '/')
+            if relative_path.startswith('./'):
+                relative_path = relative_path[2:]
+            remote_file_path = f"{remote_path}/{relative_path}".replace('//', '/')
             
-            logger.info(f"[阶段2/2] 开始SFTP传输 → {remote_file_path}")
-            
-            sftp_start_time = time_module.time()
-            actual_file_size = os.path.getsize(tmp_path) if tmp_path else 0
-            
-            # SFTP 上传，带进度回调
-            sftp_progress = [0]  # 使用列表以便回调中修改
+            dir_path = os.path.dirname(remote_file_path)
+            if dir_path and dir_path != remote_file_path:
+                try:
+                    if sftp.ssh_conn and sftp.ssh_conn.client:
+                        sftp.ssh_conn.client.exec_command(f'mkdir -p "{dir_path}"')
+                except:
+                    pass
+        else:
+            remote_file_path = f"{remote_path}/{filename}".replace('//', '/')
+        
+        logger.info(f"[阶段2/2] 开始SFTP传输 → {remote_file_path}")
+        
+        sftp_start_time = time_module.time()
+        actual_file_size = os.path.getsize(tmp_path) if tmp_path else 0
+        
+        # 定义在线程中执行的SFTP上传函数
+        def run_sftp_upload():
+            """在线程池中执行的SFTP上传"""
             last_sftp_update = [time_module.time()]
             
             def sftp_callback(sent: int, total: int):
                 """SFTP 传输进度回调"""
-                nonlocal sftp_progress, last_sftp_update
-                sftp_progress[0] = sent
                 current_time = time_module.time()
                 
-                # 每0.5秒更新一次进度
-                if current_time - last_sftp_update[0] >= 0.5:
+                # 每0.3秒更新一次进度（更频繁的更新）
+                if current_time - last_sftp_update[0] >= 0.3:
                     elapsed = current_time - sftp_start_time
                     speed = sent / elapsed if elapsed > 0 else 0
                     
@@ -447,7 +455,12 @@ async def upload_file(
                     )
                     last_sftp_update[0] = current_time
             
-            result = sftp.upload_file(tmp_path, remote_file_path, progress_callback=sftp_callback)
+            return sftp.upload_file(tmp_path, remote_file_path, progress_callback=sftp_callback)
+        
+        try:
+            # 使用线程池执行SFTP上传，避免阻塞事件循环
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(sftp_executor, run_sftp_upload)
             sftp_elapsed = time_module.time() - sftp_start_time
 
             if result["success"]:
@@ -485,7 +498,6 @@ async def upload_file(
                     logger.warning(f"删除临时文件失败: {e}")
             
             # 延迟清除进度（让前端有时间获取最终状态）
-            import asyncio
             asyncio.create_task(clear_progress_delayed(upload_id, 30))
 
     except HTTPException:

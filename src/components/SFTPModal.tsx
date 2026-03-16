@@ -218,31 +218,65 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
 
     // 启动进度轮询
     let progressInterval: number | null = null;
+    let lastStage = '';
+    let isCompleted = false; // 标记是否已完成
+    
     const startProgressPolling = () => {
       progressInterval = window.setInterval(async () => {
         try {
           const result = await sftpApi.getUploadProgress(uploadId);
           if (result.success && result.progress) {
-            const { progress, stage, message, speed } = result.progress;
+            const { progress, stage, message, speed, bytes_sent, total_bytes } = result.progress;
+            
+            // 根据进度百分比计算已传输字节数
+            // 使用原始文件大小和进度百分比计算，避免阶段切换时的跳变
+            const transferred = file.size > 0 ? Math.round((progress / 100) * file.size) : (bytes_sent || 0);
+            
+            // 更新任务进度
             transfer.updateTransferTask(taskId, {
               progress,
+              transferred,
               speed: speed || '',
               // 根据阶段显示不同的状态
               status: stage === 'error' ? 'failed' : 'transferring'
             });
             
-            // 如果完成或出错，停止轮询
+            // 检测阶段变化，添加日志
+            if (stage !== lastStage) {
+              if (stage === 'transferring' && lastStage === 'received') {
+                transfer.addTransferLog('upload', `接收完成，开始传输到服务器...`, `${sftp.currentPath}/${relativePath || file.name}`, 'info');
+              }
+              lastStage = stage;
+            }
+            
+            // 如果完成或出错，停止轮询并更新最终状态
             if (stage === 'completed' || stage === 'error') {
               if (progressInterval) {
                 clearInterval(progressInterval);
                 progressInterval = null;
+              }
+              
+              // 如果轮询检测到完成，立即更新UI状态
+              if (stage === 'completed' && !isCompleted) {
+                isCompleted = true;
+                transfer.updateTransferTask(taskId, {
+                  progress: 100,
+                  transferred: file.size,
+                  status: 'completed'
+                });
+                transfer.completeTransferTask(taskId, true);
+                transfer.addTransferLog('upload', `✓ 上传成功: ${relativePath || file.name}`, `${sftp.currentPath}/${relativePath || file.name}`, 'success', formatFileSize(file.size));
+              } else if (stage === 'error' && !isCompleted) {
+                isCompleted = true;
+                transfer.completeTransferTask(taskId, false, message);
+                transfer.addTransferLog('error', `✗ 上传失败: ${relativePath || file.name}`, message || '上传失败', 'error');
               }
             }
           }
         } catch (e) {
           // 轮询错误时忽略
         }
-      }, 500); // 每500ms轮询一次
+      }, 300); // 每300ms轮询一次，更频繁的更新
     };
 
     try {
@@ -258,14 +292,24 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
         progressInterval = null;
       }
       
+      // 如果轮询已经处理了完成状态，直接返回
+      if (isCompleted) {
+        return true;
+      }
+      
       if (response.success) {
+        // 确保进度显示为100%，传输量显示完整
+        transfer.updateTransferTask(taskId, {
+          progress: 100,
+          transferred: file.size,
+          status: 'completed'
+        });
         transfer.completeTransferTask(taskId, true);
-        transfer.updateTransferTask(taskId, { progress: 100 });
-        transfer.addTransferLog('upload', `上传成功: ${relativePath || file.name}`, `${sftp.currentPath}/${relativePath || file.name}`, 'success', formatFileSize(file.size));
+        transfer.addTransferLog('upload', `✓ 上传成功: ${relativePath || file.name}`, `${sftp.currentPath}/${relativePath || file.name}`, 'success', formatFileSize(file.size));
         return true;
       } else {
         transfer.completeTransferTask(taskId, false, response.message);
-        transfer.addTransferLog('error', `上传失败: ${relativePath || file.name}`, response.message || '上传失败', 'error');
+        transfer.addTransferLog('error', `✗ 上传失败: ${relativePath || file.name}`, response.message || '上传失败', 'error');
         return false;
       }
     } catch (err) {
@@ -274,8 +318,14 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
         clearInterval(progressInterval);
         progressInterval = null;
       }
+      
+      // 如果轮询已经处理了完成状态，直接返回
+      if (isCompleted) {
+        return true;
+      }
+      
       transfer.completeTransferTask(taskId, false, (err as Error).message);
-      transfer.addTransferLog('error', `上传失败: ${relativePath || file.name}`, (err as Error).message, 'error');
+      transfer.addTransferLog('error', `✗ 上传失败: ${relativePath || file.name}`, (err as Error).message, 'error');
       return false;
     }
   };
