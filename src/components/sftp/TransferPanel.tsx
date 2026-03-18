@@ -11,11 +11,11 @@ interface TransferPanelProps {
   onPauseTask?: (taskId: string) => void;
   onResumeTask?: (taskId: string) => void;
   onCancelTask?: (taskId: string) => void;
-  onRestoreDownload?: () => void;  // 还原下载弹窗
-  hasBackgroundDownload?: boolean;  // 是否有后台下载任务
-  backgroundDownloadProgress?: number;  // 后台下载进度
-  backgroundDownloadSpeed?: string;  // 后台下载速度
-  backgroundDownloadFilename?: string;  // 后台下载文件名
+  onRestoreDownload?: () => void;  // Restore download dialog
+  hasBackgroundDownload?: boolean;  // Has background download task
+  backgroundDownloadProgress?: number;  // Background download progress
+  backgroundDownloadSpeed?: string;  // Background download speed
+  backgroundDownloadFilename?: string;  // Background download filename
 }
 
 const getStatusColor = (status: TransferTask['status']) => {
@@ -51,12 +51,12 @@ const TransferPanel = ({
   backgroundDownloadSpeed = '',
   backgroundDownloadFilename = ''
 }: TransferPanelProps) => {
-  // 活跃任务
+  // Active tasks
   const activeTasks = transferTasks.filter(t =>
     t.status === 'transferring' || t.status === 'pending' || t.status === 'paused'
   );
 
-  // 根据当前筛选过滤已完成的任务和日志
+  // Filter completed tasks and logs based on current filter
   const filteredTasks = transferTasks.filter(t => {
     if (t.status !== 'completed' && t.status !== 'failed') return false;
     if (activeLogFilter === 'upload') return t.type === 'upload';
@@ -64,7 +64,7 @@ const TransferPanel = ({
     return true;
   });
 
-  // 获取计数
+  // Get count
   const getCount = (filter: LogFilter) => {
     if (filter === 'upload') return transferTasks.filter(t => (t.status === 'completed' || t.status === 'failed') && t.type === 'upload').length;
     if (filter === 'download') return transferTasks.filter(t => (t.status === 'completed' || t.status === 'failed') && t.type === 'download').length;
@@ -101,7 +101,7 @@ const TransferPanel = ({
                   {getCount(filter)}
                 </span>
               )}
-              {/* 后台下载指示器 */}
+              {/* Background download indicator */}
               {filter === 'download' && hasBackgroundDownload && (
                 <span className="ml-1 w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
               )}
@@ -115,7 +115,7 @@ const TransferPanel = ({
 
       {/* Content Area */}
       <div className="flex-1 overflow-auto p-3 space-y-3 bg-[#0d0d0d]">
-        {/* Background Download Restore Button - 只在 Download 标签显示 */}
+        {/* Background Download Restore Button - Only show in Download tab */}
         {activeLogFilter === 'download' && hasBackgroundDownload && onRestoreDownload && (
           <div 
             onClick={onRestoreDownload}
@@ -126,20 +126,20 @@ const TransferPanel = ({
                 <div className="w-6 h-6 rounded-full bg-blue-500/30 flex items-center justify-center">
                   <i className="fa-solid fa-cloud-arrow-down text-[10px] text-blue-400" />
                 </div>
-                <span className="text-[11px] font-medium text-blue-400">正在后台下载</span>
+                <span className="text-[11px] font-medium text-blue-400">Downloading in background</span>
               </div>
               <button className="px-2 py-1 bg-blue-500/20 hover:bg-blue-500/30 rounded text-[10px] text-blue-400 transition-colors group-hover:bg-blue-500/40">
                 <i className="fa-solid fa-expand text-[9px] mr-1" />
-                还原
+                Restore
               </button>
             </div>
             
-            {/* 文件名 */}
+            {/* File name */}
             <div className="text-[12px] text-gray-300 truncate mb-2">
               {backgroundDownloadFilename}
             </div>
             
-            {/* 进度条 */}
+            {/* Progress bar */}
             <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
               <div
                 className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-300"
@@ -147,7 +147,7 @@ const TransferPanel = ({
               />
             </div>
             
-            {/* 进度信息 */}
+            {/* Progress info */}
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-gray-400">{Math.round(backgroundDownloadProgress)}%</span>
               {backgroundDownloadSpeed && (
@@ -209,7 +209,7 @@ const TransferPanel = ({
                           style={{ width: `${task.progress}%` }}
                         />
                       ) : (
-                        // 进度为0%时显示加载动画
+                        // Show loading animation when progress is 0%
                         <div className="absolute inset-0 flex items-center">
                           <div className="h-full w-full bg-gradient-to-r from-transparent via-blue-500/30 to-transparent animate-shimmer"
                                style={{ animation: 'shimmer 1.5s infinite' }} />

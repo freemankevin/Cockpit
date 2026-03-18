@@ -1,6 +1,6 @@
 /**
- * 操作系统图标组件 - 使用本地 logo 图片
- * 只支持有 logo 文件的系统，其他使用默认 linux.png
+ * OS Icon Component - Use local logo images
+ * Only supports systems with logo files, others use default linux.png
  */
 
 interface OSIconProps {
@@ -10,58 +10,58 @@ interface OSIconProps {
   className?: string;
 }
 
-// 支持的系统类型映射 - 只包含有 logo 文件的系统
+// Supported system type mapping - Use SVG logo files
 const supportedSystems: Record<string, { 
   file: string;
   label: string;
 }> = {
   // Ubuntu
-  'ubuntu': { file: 'ubuntu.png', label: 'Ubuntu' },
+  'ubuntu': { file: 'ubuntu.svg', label: 'Ubuntu' },
   
   // Debian
-  'debian': { file: 'Debian.png', label: 'Debian' },
+  'debian': { file: 'debian.svg', label: 'Debian' },
   
   // CentOS
-  'centos': { file: 'centos.png', label: 'CentOS' },
+  'centos': { file: 'centos.svg', label: 'CentOS' },
   
   // RedHat/RHEL
-  'rhel': { file: 'redhat.png', label: 'RHEL' },
-  'redhat': { file: 'redhat.png', label: 'RHEL' },
-  'red hat': { file: 'redhat.png', label: 'RHEL' },
-  'red hat enterprise linux': { file: 'redhat.png', label: 'RHEL' },
+  'rhel': { file: 'redhat.svg', label: 'RHEL' },
+  'redhat': { file: 'redhat.svg', label: 'RHEL' },
+  'red hat': { file: 'redhat.svg', label: 'RHEL' },
+  'red hat enterprise linux': { file: 'redhat.svg', label: 'RHEL' },
   
   // Alpine
-  'alpine': { file: 'alpine.png', label: 'Alpine' },
+  'alpine': { file: 'alpine.svg', label: 'Alpine' },
   
   // openSUSE/SUSE
-  'opensuse': { file: 'suse.png', label: 'openSUSE' },
-  'suse': { file: 'suse.png', label: 'openSUSE' },
+  'opensuse': { file: 'suse.svg', label: 'openSUSE' },
+  'suse': { file: 'suse.svg', label: 'openSUSE' },
   
   // Rocky Linux
-  'rocky': { file: 'Rocky.png', label: 'Rocky' },
-  'rocky linux': { file: 'Rocky.png', label: 'Rocky' },
+  'rocky': { file: 'rocky.svg', label: 'Rocky' },
+  'rocky linux': { file: 'rocky.svg', label: 'Rocky' },
   
   // Deepin
-  'deepin': { file: 'Deepin.png', label: 'Deepin' },
-  '深度': { file: 'Deepin.png', label: 'Deepin' },
+  'deepin': { file: 'deepin.svg', label: 'Deepin' },
+  '深度': { file: 'deepin.svg', label: 'Deepin' },
   
-  // 麒麟 Kylin
-  'kylin': { file: '麒麟.png', label: '麒麟' },
-  '麒麟': { file: '麒麟.png', label: '麒麟' },
-  '银河麒麟': { file: '麒麟.png', label: '麒麟' },
-  '中标麒麟': { file: '麒麟.png', label: '麒麟' },
+  // Kylin
+  'kylin': { file: '麒麟.svg', label: 'Kylin' },
+  '麒麟': { file: '麒麟.svg', label: 'Kylin' },
+  '银河麒麟': { file: '麒麟.svg', label: 'Kylin' },
+  '中标麒麟': { file: '麒麟.svg', label: 'Kylin' },
   
-  // 欧拉 openEuler
-  'openeuler': { file: '欧拉.png', label: '欧拉' },
-  '欧拉': { file: '欧拉.png', label: '欧拉' },
+  // openEuler
+  'openeuler': { file: '欧拉.svg', label: 'openEuler' },
+  '欧拉': { file: '欧拉.svg', label: 'openEuler' },
   
-  // 龙蜥 Anolis
-  'anolis': { file: '龙蜥.png', label: '龙蜥' },
-  '龙蜥': { file: '龙蜥.png', label: '龙蜥' },
-  'anolis os': { file: '龙蜥.png', label: '龙蜥' },
+  // Anolis
+  'anolis': { file: '龙蜥.svg', label: 'Anolis' },
+  '龙蜥': { file: '龙蜥.svg', label: 'Anolis' },
+  'anolis os': { file: '龙蜥.svg', label: 'Anolis' },
 };
 
-// 系统类型映射 - 将各种可能的系统名称映射到标准 key
+// System type mapping - Map various possible system names to standard keys
 const systemTypeMapping: Record<string, string> = {
   'ubuntu': 'ubuntu',
   'debian': 'debian',
@@ -89,7 +89,7 @@ const systemTypeMapping: Record<string, string> = {
   'anolis os': 'anolis',
 };
 
-// 图标尺寸
+// Icon sizes
 const sizeMap = {
   sm: 'w-5 h-5',
   md: 'w-6 h-6',
@@ -97,7 +97,7 @@ const sizeMap = {
 };
 
 const OSIcon = ({ osKey, systemType, size = 'md', className = '' }: OSIconProps) => {
-  // 确定系统 key
+  // Determine system key
   const getSystemKey = (): string => {
     if (osKey) {
       return osKey.toLowerCase();
@@ -112,8 +112,8 @@ const OSIcon = ({ osKey, systemType, size = 'md', className = '' }: OSIconProps)
   const systemKey = getSystemKey();
   const systemConfig = supportedSystems[systemKey];
   
-  // 如果有支持的系统配置，使用对应 logo，否则使用默认 linux.png
-  const logoFile = systemConfig ? systemConfig.file : 'linux.png';
+  // If supported system config exists, use corresponding logo, otherwise use default linux.svg
+  const logoFile = systemConfig ? systemConfig.file : 'linux.svg';
   const logoPath = `/logo/${logoFile}`;
   const label = systemConfig ? systemConfig.label : (systemType || 'Linux');
   const sizeClass = sizeMap[size];
@@ -122,13 +122,13 @@ const OSIcon = ({ osKey, systemType, size = 'md', className = '' }: OSIconProps)
     <img 
       src={logoPath}
       alt={label}
-      className={`${sizeClass} object-contain rounded ${className}`}
+      className={`${sizeClass} object-contain ${className}`}
       title={label}
     />
   );
 };
 
-// 获取系统颜色 - 基于系统类型返回对应颜色
+// Get system color - Return corresponding color based on system type
 export const getOSColor = (osKey?: string, systemType?: string): string => {
   const key = osKey?.toLowerCase() || systemType?.toLowerCase().trim() || 'unknown';
   const mappedKey = systemTypeMapping[key] || key;
@@ -150,7 +150,7 @@ export const getOSColor = (osKey?: string, systemType?: string): string => {
   return colorMap[mappedKey] || '#8E8E93';
 };
 
-// 获取系统显示名称
+// Get system display name
 export const getOSLabel = (osKey?: string, systemType?: string): string => {
   if (osKey) {
     const key = osKey.toLowerCase();

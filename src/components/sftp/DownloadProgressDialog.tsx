@@ -19,19 +19,19 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-// 格式化时间
+// Format time
 const formatTime = (seconds: number): string => {
   if (seconds < 0 || !isFinite(seconds)) return '--:--';
-  if (seconds < 60) return `${Math.round(seconds)}秒`;
+  if (seconds < 60) return `${Math.round(seconds)}s`;
   const mins = Math.floor(seconds / 60);
   const secs = Math.round(seconds % 60);
-  if (mins < 60) return `${mins}分${secs}秒`;
+  if (mins < 60) return `${mins}m ${secs}s`;
   const hours = Math.floor(mins / 60);
   const remainMins = mins % 60;
-  return `${hours}时${remainMins}分`;
+  return `${hours}h ${remainMins}m`;
 };
 
-// 解析速度字符串获取字节/秒
+// Parse speed string to get bytes per second
 const parseSpeed = (speedStr: string): number => {
   if (!speedStr || speedStr === '0 B/s') return 0;
   const match = speedStr.match(/^([\d.]+)\s*(B|KB|MB|GB)\/s$/i);
@@ -53,7 +53,7 @@ const DownloadProgressDialog = ({
   const [displayProgress, setDisplayProgress] = useState(0);
   const [smoothSpeed, setSmoothSpeed] = useState('0 B/s');
   
-  // 平滑进度动画
+  // Smooth progress animation
   useEffect(() => {
     const targetProgress = progress.progress || 0;
     const currentProgress = displayProgress;
@@ -63,7 +63,7 @@ const DownloadProgressDialog = ({
       return;
     }
     
-    // 平滑过渡
+    // Smooth transition
     const step = (targetProgress - currentProgress) / 10;
     const timer = setInterval(() => {
       setDisplayProgress(prev => {
@@ -79,7 +79,7 @@ const DownloadProgressDialog = ({
     return () => clearInterval(timer);
   }, [progress.progress]);
   
-  // 平滑速度显示
+  // Smooth speed display
   useEffect(() => {
     if (progress.speed) {
       setSmoothSpeed(progress.speed);
@@ -95,7 +95,7 @@ const DownloadProgressDialog = ({
   const isError = progress.stage === 'error';
   const isDownloading = progress.stage === 'downloading';
   
-  // 计算进度条颜色
+  // Calculate progress bar color
   const getProgressColor = () => {
     if (isError) return 'from-red-500 to-red-400';
     if (isCompleted) return 'from-emerald-500 to-emerald-400';
@@ -104,10 +104,10 @@ const DownloadProgressDialog = ({
   
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center animate-fade-in">
-      {/* 背景遮罩 */}
+      {/* Background mask */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onMinimize} />
       
-      {/* 弹窗主体 */}
+      {/* Dialog body */}
       <div 
         className="relative bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] rounded-2xl shadow-2xl border border-white/10 overflow-hidden"
         style={{ 
@@ -115,10 +115,10 @@ const DownloadProgressDialog = ({
           fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
         }}
       >
-        {/* 标题栏 */}
+        {/* Title bar */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            {/* 图标动画 */}
+            {/* Icon animation */}
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
               isCompleted ? 'bg-emerald-500/20' : 
               isError ? 'bg-red-500/20' : 
@@ -134,7 +134,7 @@ const DownloadProgressDialog = ({
             </div>
             <div>
               <h3 className="text-base font-semibold text-gray-100">
-                {isCompleted ? '下载完成' : isError ? '下载失败' : '正在下载'}
+                {isCompleted ? 'Download Complete' : isError ? 'Download Failed' : 'Downloading'}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[280px]">{filename}</p>
             </div>
@@ -144,7 +144,7 @@ const DownloadProgressDialog = ({
             <button
               onClick={onMinimize}
               className="p-2 text-gray-500 hover:text-gray-300 hover:bg-white/5 rounded-lg transition-colors"
-              title="最小化到后台"
+              title="Minimize to background"
             >
               <i className="fa-solid fa-minus text-sm" />
             </button>
@@ -152,7 +152,7 @@ const DownloadProgressDialog = ({
               <button
                 onClick={onClose}
                 className="p-2 text-gray-500 hover:text-gray-300 hover:bg-white/5 rounded-lg transition-colors"
-                title="关闭"
+                title="Close"
               >
                 <i className="fa-solid fa-xmark text-sm" />
               </button>
@@ -160,25 +160,25 @@ const DownloadProgressDialog = ({
           </div>
         </div>
         
-        {/* 进度区域 */}
+        {/* Progress area */}
         <div className="px-5 py-6">
-          {/* 大百分比显示 */}
+          {/* Large percentage display */}
           <div className="text-center mb-4">
             <span className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
               {Math.round(displayProgress)}%
             </span>
           </div>
           
-          {/* 进度条 - 游戏风格 */}
+          {/* Progress bar - Game style */}
           <div className="relative mb-5">
-            {/* 背景轨道 */}
+            {/* Background track */}
             <div className="h-3 bg-white/5 rounded-full overflow-hidden">
-              {/* 进度填充 */}
+              {/* Progress fill */}
               <div 
                 className={`h-full rounded-full bg-gradient-to-r ${getProgressColor()} transition-all duration-300 relative`}
                 style={{ width: `${displayProgress}%` }}
               >
-                {/* 光效动画 */}
+                {/* Light effect animation */}
                 {isDownloading && (
                   <div className="absolute inset-0 overflow-hidden rounded-full">
                     <div 
@@ -193,7 +193,7 @@ const DownloadProgressDialog = ({
               </div>
             </div>
             
-            {/* 进度条上的光点 */}
+            {/* Light point on progress bar */}
             {isDownloading && displayProgress > 0 && (
               <div 
                 className="absolute top-0 w-3 h-3 rounded-full bg-white shadow-lg shadow-blue-400/50"
@@ -206,43 +206,43 @@ const DownloadProgressDialog = ({
             )}
           </div>
           
-          {/* 详细信息 */}
+          {/* Details */}
           <div className="grid grid-cols-3 gap-4 text-center">
-            {/* 文件大小 */}
+            {/* File size */}
             <div className="bg-white/5 rounded-xl p-3">
-              <div className="text-xs text-gray-500 mb-1">文件大小</div>
+              <div className="text-xs text-gray-500 mb-1">File Size</div>
               <div className="text-sm font-medium text-gray-200">{formatFileSize(fileSize)}</div>
             </div>
             
-            {/* 下载速度 */}
+            {/* Download speed */}
             <div className="bg-white/5 rounded-xl p-3">
-              <div className="text-xs text-gray-500 mb-1">下载速度</div>
+              <div className="text-xs text-gray-500 mb-1">Download Speed</div>
               <div className={`text-sm font-medium ${isDownloading ? 'text-blue-400' : 'text-gray-200'}`}>
                 {smoothSpeed}
               </div>
             </div>
             
-            {/* 剩余时间 */}
+            {/* Remaining time */}
             <div className="bg-white/5 rounded-xl p-3">
-              <div className="text-xs text-gray-500 mb-1">剩余时间</div>
+              <div className="text-xs text-gray-500 mb-1">Remaining Time</div>
               <div className="text-sm font-medium text-gray-200">
-                {isCompleted ? '已完成' : formatTime(remainingTime)}
+                {isCompleted ? 'Completed' : formatTime(remainingTime)}
               </div>
             </div>
           </div>
           
-          {/* 传输详情 */}
+          {/* Transfer details */}
           <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
             <span>
-              已下载: {formatFileSize(progress.bytes_received || 0)}
+              Downloaded: {formatFileSize(progress.bytes_received || 0)}
             </span>
             <span>
-              {progress.message || '准备中...'}
+              {progress.message || 'Preparing...'}
             </span>
           </div>
         </div>
         
-        {/* 底部操作区 */}
+        {/* Bottom action area */}
         {(isCompleted || isError) && (
           <div className="px-5 py-4 border-t border-white/5 bg-white/[0.02]">
             <button
@@ -253,12 +253,12 @@ const DownloadProgressDialog = ({
                   : 'bg-gradient-to-r from-red-500 to-red-400 text-white hover:from-red-400 hover:to-red-300'
               }`}
             >
-              {isCompleted ? '完成' : '关闭'}
+              {isCompleted ? 'Done' : 'Close'}
             </button>
           </div>
         )}
         
-        {/* 装饰性背景 */}
+        {/* Decorative background */}
         <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -top-10 -left-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
       </div>

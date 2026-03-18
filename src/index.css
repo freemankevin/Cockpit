@@ -14,13 +14,19 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #F5F5F7;
   color: #1D1D1F;
   line-height: 1.47059;
   letter-spacing: -0.022em;
+}
+
+/* 数字使用苹果 SF Pro 风格字体，更有质感 */
+input, textarea, .font-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
 }
 
 /* 代码字体 - 苹果风格等宽字体 */
@@ -372,6 +378,74 @@ code, pre, .font-mono {
   opacity: 1;
   visibility: visible;
   transform: translateY(-8px);
+}
+
+/* ============================================
+   macOS Checkbox Styles
+   ============================================ */
+@layer components {
+  /* macOS 风格复选框容器 */
+  .checkbox-macos {
+    @apply relative inline-flex items-center justify-center cursor-pointer;
+  }
+
+  /* 隐藏原生复选框 */
+  .checkbox-macos input {
+    @apply absolute opacity-0 w-0 h-0 cursor-pointer;
+  }
+
+  /* 复选框自定义外观 */
+  .checkbox-macos .checkbox-custom {
+    @apply w-[18px] h-[18px] rounded-md border border-gray-300 bg-white
+           flex items-center justify-center
+           transition-all duration-200 ease-macos
+           shadow-sm;
+  }
+
+  /* hover 状态 */
+  .checkbox-macos:hover .checkbox-custom {
+    @apply border-gray-400;
+  }
+
+  /* 选中状态 */
+  .checkbox-macos input:checked + .checkbox-custom {
+    @apply bg-blue-500 border-blue-500 shadow-checkbox;
+  }
+
+  /* 选中时的勾选图标 */
+  .checkbox-macos input:checked + .checkbox-custom .checkbox-check {
+    @apply opacity-100 scale-100;
+  }
+
+  /* 勾选图标 */
+  .checkbox-custom .checkbox-check {
+    @apply opacity-0 scale-0 transition-all duration-150 ease-out;
+  }
+
+  /* 焦点状态 */
+  .checkbox-macos input:focus-visible + .checkbox-custom {
+    @apply ring-2 ring-blue-500/30 ring-offset-1;
+  }
+
+  /* 禁用状态 */
+  .checkbox-macos input:disabled + .checkbox-custom {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  /* 小尺寸复选框 */
+  .checkbox-macos-sm .checkbox-custom {
+    @apply w-3.5 h-3.5 rounded;
+  }
+
+  /* 大尺寸复选框 */
+  .checkbox-macos-lg .checkbox-custom {
+    @apply w-5 h-5 rounded-lg;
+  }
+}
+
+/* 复选框阴影 */
+.shadow-checkbox {
+  box-shadow: 0 1px 3px rgba(0, 122, 255, 0.3);
 }
 
 

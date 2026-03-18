@@ -33,8 +33,9 @@ func ConnectSFTP(hostID uint) (*SFTPService, error) {
 	sftpMu.Lock()
 	defer sftpMu.Unlock()
 
-	// 如果已存在连接，返回
+	// 如果已存在连接，标记SFTP为打开状态并返回
 	if service, exists := sftpConnections[hostID]; exists {
+		config.Pool.SetSFTPOpen(hostID, true)
 		return service, nil
 	}
 
@@ -52,6 +53,9 @@ func ConnectSFTP(hostID uint) (*SFTPService, error) {
 
 	service := &SFTPService{Client: client, hostID: hostID}
 	sftpConnections[hostID] = service
+
+	// 标记SFTP为打开状态，保持连接
+	config.Pool.SetSFTPOpen(hostID, true)
 
 	log.Printf("[SFTP] Connected (host_id=%d)", hostID)
 	return service, nil
@@ -73,6 +77,8 @@ func DisconnectSFTP(hostID uint) {
 	if service, exists := sftpConnections[hostID]; exists {
 		service.Client.Close()
 		delete(sftpConnections, hostID)
+		// 标记SFTP为关闭状态，但保持连接10分钟
+		config.Pool.SetSFTPOpen(hostID, false)
 		log.Printf("[SFTP] Disconnected (host_id=%d)", hostID)
 	}
 }

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
@@ -63,14 +64,18 @@ func terminalHandler(c *gin.Context) {
 		if host.KeyID != nil {
 			key = &models.SSHKey{}
 			if err := database.DB.First(key, *host.KeyID).Error; err != nil {
+				log.Printf("[Terminal] Failed to load key (key_id=%d): %v", *host.KeyID, err)
 				key = nil
+			} else {
+				log.Printf("[Terminal] Loaded key (key_id=%d, name=%s, has_private_key=%v)",
+					*host.KeyID, key.Name, key.PrivateKey != "")
 			}
 		}
 
 		// 连接
 		sshConn, err = config.Pool.Connect(hostID, host.Host, host.Port, host.User, password, key)
 		if err != nil {
-			conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31m连接失败: "+err.Error()+"\x1b[0m\r\n"))
+			conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31mConnection failed: "+err.Error()+"\x1b[0m\r\n"))
 			return
 		}
 	}
@@ -78,7 +83,7 @@ func terminalHandler(c *gin.Context) {
 	// 创建 SSH 会话
 	session, err := sshConn.Client.NewSession()
 	if err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31m创建会话失败: "+err.Error()+"\x1b[0m\r\n"))
+		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31mSession creation failed: "+err.Error()+"\x1b[0m\r\n"))
 		return
 	}
 	defer session.Close()
@@ -92,34 +97,37 @@ func terminalHandler(c *gin.Context) {
 
 	// 请求伪终端
 	if err := session.RequestPty("xterm-256color", 40, 120, modes); err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31m请求终端失败: "+err.Error()+"\x1b[0m\r\n"))
+		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31mTerminal request failed: "+err.Error()+"\x1b[0m\r\n"))
 		return
 	}
 
 	// 获取管道
 	stdin, err := session.StdinPipe()
 	if err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31m获取标准输入失败: "+err.Error()+"\x1b[0m\r\n"))
+		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31mStdin pipe failed: "+err.Error()+"\x1b[0m\r\n"))
 		return
 	}
 
 	stdout, err := session.StdoutPipe()
 	if err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31m获取标准输出失败: "+err.Error()+"\x1b[0m\r\n"))
+		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31mStdout pipe failed: "+err.Error()+"\x1b[0m\r\n"))
 		return
 	}
 
 	stderr, err := session.StderrPipe()
 	if err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31m获取标准错误失败: "+err.Error()+"\x1b[0m\r\n"))
+		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31mStderr pipe failed: "+err.Error()+"\x1b[0m\r\n"))
 		return
 	}
 
 	// 启动 shell
 	if err := session.Shell(); err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31m启动 shell 失败: "+err.Error()+"\x1b[0m\r\n"))
+		conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[31mShell start failed: "+err.Error()+"\x1b[0m\r\n"))
 		return
 	}
+
+	// 标记终端为打开状态，保持连接
+	config.Pool.SetTerminalOpen(hostID, true)
 
 	// 保存会话
 	terminalMu.Lock()
@@ -136,11 +144,13 @@ func terminalHandler(c *gin.Context) {
 		terminalMu.Lock()
 		delete(terminalSessions, hostID)
 		terminalMu.Unlock()
+		// 标记终端为关闭状态，但保持连接10分钟
+		config.Pool.SetTerminalOpen(hostID, false)
 		log.Printf("[Terminal] Session closed (host_id=%d)", hostID)
 	}()
 
 	// 发送欢迎消息
-	conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[32m已连接到 "+host.Name+" ("+host.Host+")\x1b[0m\r\n"))
+	conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[32mConnected to "+host.Name+" ("+host.Host+")\x1b[0m\r\n"))
 
 	// 读取输出协程
 	go func() {
@@ -148,7 +158,7 @@ func terminalHandler(c *gin.Context) {
 		for {
 			n, err := stdout.Read(buf)
 			if err != nil {
-				conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[33m连接已关闭\x1b[0m\r\n"))
+				conn.WriteMessage(websocket.TextMessage, []byte("\r\n\x1b[33m[Connection closed]\x1b[0m\r\n"))
 				return
 			}
 			if n > 0 {
@@ -178,8 +188,33 @@ func terminalHandler(c *gin.Context) {
 			break
 		}
 
-		// 写入 SSH
-		stdin.Write(msg)
+		// 尝试解析 JSON 消息
+		var wsMsg struct {
+			Type string `json:"type"`
+			Data string `json:"data"`
+			Cols int    `json:"cols"`
+			Rows int    `json:"rows"`
+		}
+		
+		if err := json.Unmarshal(msg, &wsMsg); err == nil {
+			// 是 JSON 消息
+			switch wsMsg.Type {
+			case "ping":
+				// 心跳请求，响应 pong
+				conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"pong"}`))
+			case "data":
+				// 写入数据到 SSH
+				stdin.Write([]byte(wsMsg.Data))
+			case "resize":
+				// 调整终端大小
+				if wsMsg.Cols > 0 && wsMsg.Rows > 0 {
+					session.WindowChange(wsMsg.Rows, wsMsg.Cols)
+				}
+			}
+		} else {
+			// 原始消息，直接写入 SSH（向后兼容）
+			stdin.Write(msg)
+		}
 	}
 }
 

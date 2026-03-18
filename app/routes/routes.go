@@ -1,7 +1,11 @@
 package routes
 
 import (
+	"crypto/rand"
+	"encoding/json"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"deploy-master/config"
@@ -110,7 +114,34 @@ func getHosts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": hosts})
+
+	// 为每个主机添加连接状态
+	type HostResponse struct {
+		models.Host
+		Status string `json:"status"`
+	}
+
+	var response []HostResponse
+	for _, host := range hosts {
+		status := "disconnected"
+		if _, exists := config.Pool.Get(host.ID); exists {
+			status = "connected"
+		}
+
+		// 设置 auth_type
+		if host.KeyID != nil {
+			host.AuthType = "key"
+		} else {
+			host.AuthType = "password"
+		}
+
+		response = append(response, HostResponse{
+			Host:   host,
+			Status: status,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": response})
 }
 
 func getHost(c *gin.Context) {
@@ -180,6 +211,7 @@ func createHost(c *gin.Context) {
 
 	// 创建主机模型
 	host := models.Host{
+		HostID:      generateHostID(),
 		Name:        req.Name,
 		Host:        req.Address,
 		Port:        req.Port,
@@ -222,7 +254,89 @@ func createHost(c *gin.Context) {
 		host.AuthType = "password"
 	}
 
+	// 自动连接主机并获取系统信息
+	go autoConnectAndGetInfo(host)
+
 	c.JSON(http.StatusCreated, gin.H{"success": true, "data": host})
+}
+
+// autoConnectAndGetInfo 自动连接主机并获取系统信息
+func autoConnectAndGetInfo(host models.Host) {
+	// 解密密码
+	password := ""
+	if host.Password != "" {
+		password = config.DecryptPassword(host.Password)
+	}
+
+	// 获取密钥
+	var key *models.SSHKey
+	if host.KeyID != nil {
+		key = &models.SSHKey{}
+		if err := database.DB.First(key, *host.KeyID).Error; err != nil {
+			log.Printf("[AutoConnect] Failed to load key (key_id=%d): %v", *host.KeyID, err)
+			key = nil
+		} else {
+			log.Printf("[AutoConnect] Loaded key (key_id=%d, name=%s)", *host.KeyID, key.Name)
+		}
+	}
+
+	// 尝试连接
+	hostID := host.ID
+	_, err := config.Pool.Connect(hostID, host.Host, host.Port, host.User, password, key)
+	if err != nil {
+		log.Printf("[AutoConnect] Failed to connect to host %s (%s): %v", host.Name, host.Host, err)
+		return
+	}
+
+	log.Printf("[AutoConnect] Successfully connected to host %s (%s), fetching system info...", host.Name, host.Host)
+
+	// 获取系统信息并更新数据库
+	systemInfo, _ := services.GetSystemInfo(hostID)
+	hardwareInfo, _ := services.GetHardwareInfo(hostID)
+
+	if systemInfo != nil {
+		host.SystemType = "linux"
+		host.OSKey = systemInfo.Distro
+		host.OSVersion = systemInfo.Version
+		host.KernelVersion = systemInfo.Kernel
+		host.Architecture = "x86_64"
+
+		// 获取架构
+		if arch, err := config.Pool.ExecuteCommand(hostID, "uname -m"); err == nil {
+			host.Architecture = strings.TrimSpace(arch)
+		}
+	}
+
+	if hardwareInfo != nil {
+		host.CPUCores = hardwareInfo.CPU.Cores
+		// 内存转换为 GB
+		host.MemoryGB = int(hardwareInfo.Memory.Total / 1024 / 1024 / 1024)
+
+		// 保存所有磁盘信息为JSON
+		var diskList []models.DiskInfoJSON
+		for _, disk := range hardwareInfo.Disks {
+			diskList = append(diskList, models.DiskInfoJSON{
+				Device:     disk.Device,
+				MountPoint: disk.MountPoint,
+				Total:      int(disk.Total / 1024 / 1024 / 1024),
+				Used:       int(disk.Used / 1024 / 1024 / 1024),
+				Free:       int(disk.Free / 1024 / 1024 / 1024),
+				Usage:      disk.Usage,
+			})
+		}
+		if len(diskList) > 0 {
+			if diskJSON, err := json.Marshal(diskList); err == nil {
+				host.Disks = diskJSON
+			}
+		}
+	}
+
+	// 保存更新
+	if err := database.DB.Save(&host).Error; err != nil {
+		log.Printf("[AutoConnect] Failed to save host info: %v", err)
+	} else {
+		log.Printf("[AutoConnect] Successfully updated host %s with system info", host.Name)
+	}
 }
 
 func updateHost(c *gin.Context) {
@@ -252,15 +366,44 @@ func updateHost(c *gin.Context) {
 	if req.Username != "" {
 		host.User = req.Username
 	}
-	if req.Password != "" {
-		host.Password = config.EncryptPassword(req.Password)
-		host.KeyID = nil // 使用密码认证时清除密钥
+
+	// 处理认证方式切换
+	if req.AuthType == "password" {
+		// 切换到密码认证模式
+		host.KeyID = nil // 清除密钥
+		// 只有在提供了新密码时才更新密码
+		if req.Password != "" {
+			host.Password = config.EncryptPassword(req.Password)
+		}
+		// 如果密码为空字符串，表示要清除密码（从key切换到password但没有提供密码）
+		if req.Password == "" {
+			host.Password = ""
+		}
+	} else if req.AuthType == "key" {
+		// 切换到密钥认证模式
+		host.Password = "" // 清除密码
+		// 只有在提供了新密钥时才更新密钥
+		if req.PrivateKey != "" {
+			keyID := uint(parseInt(req.PrivateKey))
+			host.KeyID = &keyID
+		}
+		// 如果private_key为空字符串，表示要清除密钥（从password切换到key但没有提供密钥）
+		if req.PrivateKey == "" {
+			host.KeyID = nil
+		}
+	} else {
+		// 如果没有指定auth_type，保持原有认证方式，但允许更新凭证
+		if req.Password != "" {
+			host.Password = config.EncryptPassword(req.Password)
+			host.KeyID = nil
+		}
+		if req.PrivateKey != "" {
+			keyID := uint(parseInt(req.PrivateKey))
+			host.KeyID = &keyID
+			host.Password = ""
+		}
 	}
-	if req.AuthType == "key" && req.PrivateKey != "" {
-		keyID := uint(parseInt(req.PrivateKey))
-		host.KeyID = &keyID
-		host.Password = "" // 使用密钥认证时清除密码
-	}
+
 	if req.Group != "" {
 		host.Group = req.Group
 	}
@@ -311,7 +454,11 @@ func connectHost(c *gin.Context) {
 	if host.KeyID != nil {
 		key = &models.SSHKey{}
 		if err := database.DB.First(key, *host.KeyID).Error; err != nil {
+			log.Printf("[SSH] Failed to load key (key_id=%d): %v", *host.KeyID, err)
 			key = nil
+		} else {
+			log.Printf("[SSH] Loaded key (key_id=%d, name=%s, has_private_key=%v)",
+				*host.KeyID, key.Name, key.PrivateKey != "")
 		}
 	}
 
@@ -322,6 +469,50 @@ func connectHost(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
+
+	// 获取系统信息并更新数据库
+	systemInfo, _ := services.GetSystemInfo(hostID)
+	hardwareInfo, _ := services.GetHardwareInfo(hostID)
+
+	if systemInfo != nil {
+		host.SystemType = "linux"
+		host.OSKey = systemInfo.Distro
+		host.OSVersion = systemInfo.Version // 完整版本号（包含小版本号）
+		host.KernelVersion = systemInfo.Kernel
+		host.Architecture = "x86_64" // 默认值，后续可通过命令获取
+
+		// 获取架构
+		if arch, err := config.Pool.ExecuteCommand(hostID, "uname -m"); err == nil {
+			host.Architecture = strings.TrimSpace(arch)
+		}
+	}
+
+	if hardwareInfo != nil {
+		host.CPUCores = hardwareInfo.CPU.Cores
+		// 内存转换为 GB
+		host.MemoryGB = int(hardwareInfo.Memory.Total / 1024 / 1024 / 1024)
+
+		// 保存所有磁盘信息为JSON
+		var diskList []models.DiskInfoJSON
+		for _, disk := range hardwareInfo.Disks {
+			diskList = append(diskList, models.DiskInfoJSON{
+				Device:     disk.Device,
+				MountPoint: disk.MountPoint,
+				Total:      int(disk.Total / 1024 / 1024 / 1024),
+				Used:       int(disk.Used / 1024 / 1024 / 1024),
+				Free:       int(disk.Free / 1024 / 1024 / 1024),
+				Usage:      disk.Usage,
+			})
+		}
+		if len(diskList) > 0 {
+			if diskJSON, err := json.Marshal(diskList); err == nil {
+				host.Disks = diskJSON
+			}
+		}
+	}
+
+	// 保存更新
+	database.DB.Save(&host)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
@@ -395,7 +586,25 @@ func getKeys(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, keys)
+	// 返回简化版的密钥列表（不包含私钥内容）
+	type KeyResponse struct {
+		ID        uint   `json:"id"`
+		Name      string `json:"name"`
+		Type      string `json:"type"`
+		PublicKey string `json:"public_key"`
+		Comment   string `json:"comment"`
+	}
+	var response []KeyResponse
+	for _, key := range keys {
+		response = append(response, KeyResponse{
+			ID:        key.ID,
+			Name:      key.Name,
+			Type:      key.Type,
+			PublicKey: key.PublicKey,
+			Comment:   key.Comment,
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": response})
 }
 
 func getKey(c *gin.Context) {
@@ -411,16 +620,16 @@ func getKey(c *gin.Context) {
 func createKey(c *gin.Context) {
 	var key models.SSHKey
 	if err := c.ShouldBindJSON(&key); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 
 	if err := database.DB.Create(&key).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, key)
+	c.JSON(http.StatusCreated, gin.H{"success": true, "data": key})
 }
 
 func updateKey(c *gin.Context) {
@@ -461,12 +670,13 @@ func deleteKey(c *gin.Context) {
 
 func generateKey(c *gin.Context) {
 	var input struct {
+		Name       string `json:"name"`
 		Type       string `json:"type"`
 		Bits       int    `json:"bits"`
 		Passphrase string `json:"passphrase"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 
@@ -479,12 +689,28 @@ func generateKey(c *gin.Context) {
 
 	privateKey, publicKey, err := config.GenerateSSHKey(input.Type, input.Bits, input.Passphrase)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+
+	// 保存到数据库
+	key := models.SSHKey{
+		Name:       input.Name,
+		Type:       input.Type,
+		PrivateKey: privateKey,
+		PublicKey:  publicKey,
+		Passphrase: input.Passphrase,
+	}
+	if err := database.DB.Create(&key).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"private_key": privateKey,
+		"success":     true,
+		"id":          key.ID,
+		"name":        key.Name,
+		"type":        key.Type,
 		"public_key":  publicKey,
 	})
 }
@@ -788,27 +1014,46 @@ func generateID() string {
 	return string(b)
 }
 
+// generateHostID 生成主机ID，格式：ins-8位随机字符
+func generateHostID() string {
+	const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+	b := make([]byte, 8)
+	rand.Read(b)
+	for i := range b {
+		b[i] = chars[b[i]%byte(len(chars))]
+	}
+	return "ins-" + string(b)
+}
+
 // getHostStats 获取主机统计信息
 func getHostStats(c *gin.Context) {
 	var total, connected int
-	
+
 	hosts, err := database.GetAllHosts()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
-	
+
 	total = len(hosts)
 	for _, host := range hosts {
 		if _, exists := config.Pool.Get(host.ID); exists {
 			connected++
 		}
 	}
-	
+
+	// 获取密钥数量
+	var keyCount int64
+	database.DB.Model(&models.SSHKey{}).Count(&keyCount)
+
 	c.JSON(http.StatusOK, gin.H{
-		"total":      total,
-		"connected":  connected,
-		"disconnected": total - connected,
+		"success":      true,
+		"data": gin.H{
+			"total":        total,
+			"online":       connected,
+			"offline":      total - connected,
+			"key_count":    keyCount,
+		},
 	})
 }
 
@@ -848,7 +1093,11 @@ func testHostConnection(c *gin.Context) {
 	if host.KeyID != nil {
 		key = &models.SSHKey{}
 		if err := database.DB.First(key, *host.KeyID).Error; err != nil {
+			log.Printf("[SSH] Failed to load key (key_id=%d): %v", *host.KeyID, err)
 			key = nil
+		} else {
+			log.Printf("[SSH] Loaded key (key_id=%d, name=%s, has_private_key=%v)",
+				*host.KeyID, key.Name, key.PrivateKey != "")
 		}
 	}
 
@@ -861,6 +1110,56 @@ func testHostConnection(c *gin.Context) {
 			"message": err.Error(),
 		})
 		return
+	}
+
+	log.Printf("[TestConnection] Successfully connected to host %s (%s), fetching system info...", host.Name, host.Host)
+
+	// 获取系统信息并更新数据库
+	systemInfo, _ := services.GetSystemInfo(hostID)
+	hardwareInfo, _ := services.GetHardwareInfo(hostID)
+
+	if systemInfo != nil {
+		host.SystemType = "linux"
+		host.OSKey = systemInfo.Distro
+		host.OSVersion = systemInfo.Version
+		host.KernelVersion = systemInfo.Kernel
+		host.Architecture = "x86_64"
+
+		// 获取架构
+		if arch, err := config.Pool.ExecuteCommand(hostID, "uname -m"); err == nil {
+			host.Architecture = strings.TrimSpace(arch)
+		}
+	}
+
+	if hardwareInfo != nil {
+		host.CPUCores = hardwareInfo.CPU.Cores
+		// 内存转换为 GB
+		host.MemoryGB = int(hardwareInfo.Memory.Total / 1024 / 1024 / 1024)
+
+		// 保存所有磁盘信息为JSON
+		var diskList []models.DiskInfoJSON
+		for _, disk := range hardwareInfo.Disks {
+			diskList = append(diskList, models.DiskInfoJSON{
+				Device:     disk.Device,
+				MountPoint: disk.MountPoint,
+				Total:      int(disk.Total / 1024 / 1024 / 1024),
+				Used:       int(disk.Used / 1024 / 1024 / 1024),
+				Free:       int(disk.Free / 1024 / 1024 / 1024),
+				Usage:      disk.Usage,
+			})
+		}
+		if len(diskList) > 0 {
+			if diskJSON, err := json.Marshal(diskList); err == nil {
+				host.Disks = diskJSON
+			}
+		}
+	}
+
+	// 保存更新
+	if err := database.DB.Save(&host).Error; err != nil {
+		log.Printf("[TestConnection] Failed to save host info: %v", err)
+	} else {
+		log.Printf("[TestConnection] Successfully updated host %s with system info", host.Name)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -8,13 +8,11 @@ import SFTPModal from './components/SFTPModal';
 import { ToastContainer } from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { hostApi } from './services/api';
-import type { SSHHost, HostStats, CreateHostRequest, UpdateHostRequest } from './types';
+import type { SSHHost, CreateHostRequest, UpdateHostRequest } from './types';
 
 function App() {
   const [hosts, setHosts] = useState<SSHHost[]>([]);
-  const [stats, setStats] = useState<HostStats>({ total: 0, online: 0, offline: 0, key_count: 0 });
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isSFTPOpen, setIsSFTPOpen] = useState(false);
@@ -23,7 +21,7 @@ function App() {
   const [copyingHost, setCopyingHost] = useState<SSHHost | null>(null);
   const { toasts, removeToast, success, error } = useToast();
 
-  // 加载主机列表
+  // Load host list
   const loadHosts = useCallback(async () => {
     try {
       setLoading(true);
@@ -33,72 +31,37 @@ function App() {
       }
     } catch (err) {
       console.error('Failed to load hosts:', err);
-      error('加载失败', '无法加载主机列表');
+      error('Load Failed', 'Unable to load host list');
     } finally {
       setLoading(false);
     }
   }, [error]);
 
-  // 加载统计信息
-  const loadStats = useCallback(async () => {
-    try {
-      const response = await hostApi.getStats();
-      if (response.success && response.data) {
-        setStats(response.data);
-      }
-    } catch (err) {
-      console.error('Failed to load stats:', err);
-    }
-  }, []);
-
-  // 初始化加载
+  // Initialize load
   useEffect(() => {
     loadHosts();
-    loadStats();
-  }, [loadHosts, loadStats]);
+  }, [loadHosts]);
 
-  // 搜索主机
-  useEffect(() => {
-    const searchHosts = async () => {
-      if (!searchQuery.trim()) {
-        loadHosts();
-        return;
-      }
-      try {
-        const response = await hostApi.search(searchQuery);
-        if (response.success && response.data) {
-          setHosts(response.data);
-        }
-      } catch (err) {
-        console.error('Search failed:', err);
-      }
-    };
-
-    const debounceTimer = setTimeout(searchHosts, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, loadHosts]);
-
-  // 添加主机
+  // Add host
   const handleAddHost = async (data: CreateHostRequest) => {
     try {
       const response = await hostApi.create(data);
       if (response.success) {
         await loadHosts();
-        await loadStats();
         setIsAddModalOpen(false);
         setCopyingHost(null);
-        success('添加成功', '主机已成功添加');
+        success('Added Successfully', 'Host has been successfully added');
         return true;
       }
       return false;
     } catch (err) {
       console.error('Failed to add host:', err);
-      error('添加失败', '无法添加主机，请检查配置');
+      error('Add Failed', 'Unable to add host, please check configuration');
       return false;
     }
   };
 
-  // 更新主机
+  // Update host
   const handleUpdateHost = async (id: number, data: UpdateHostRequest) => {
     try {
       console.log('handleUpdateHost 被调用, id:', id, 'data:', data);
@@ -106,62 +69,60 @@ function App() {
       console.log('API 响应:', response);
       if (response.success) {
         await loadHosts();
-        await loadStats();
         setEditingHost(null);
         setIsAddModalOpen(false);
-        success('更新成功', '主机信息已更新');
+        success('Update Successful', 'Host information has been updated');
         return true;
       }
       return false;
     } catch (err) {
       console.error('Failed to update host:', err);
-      error('更新失败', '无法更新主机信息');
+      error('Update Failed', 'Unable to update host information');
       return false;
     }
   };
 
-  // 删除主机
+  // Delete host
   const handleDeleteHost = async (id: number) => {
-    // 使用自定义确认对话框替代浏览器默认 alert
-    if (!confirm('确定要删除此主机吗？此操作不可恢复。')) {
+    // Use custom confirmation dialog instead of browser default alert
+    if (!confirm('Are you sure you want to delete this host? This operation cannot be undone.')) {
       return;
     }
     try {
       const response = await hostApi.delete(id);
       if (response.success) {
         await loadHosts();
-        await loadStats();
-        success('删除成功', '主机已删除');
+        success('Deleted Successfully', 'Host has been deleted');
       }
     } catch (err) {
       console.error('Failed to delete host:', err);
-      error('删除失败', '无法删除主机');
+      error('Delete Failed', 'Unable to delete host');
     }
   };
 
-  // 测试连接
+  // Test connection
   const handleTestConnection = async (id: number) => {
     try {
       const response = await hostApi.testConnection(id);
       if (response.success) {
-        success('连接成功', 'SSH 连接测试通过');
+        success('Connection Successful', 'SSH connection test passed');
         await loadHosts();
       } else {
-        error('连接失败', response.message || '无法连接到主机');
+        error('Connection Failed', response.message || 'Unable to connect to host');
       }
     } catch (err) {
       console.error('Test connection failed:', err);
-      error('连接失败', '测试连接时发生错误');
+      error('Connection Failed', 'Error occurred during connection test');
     }
   };
 
-  // 打开终端
+  // Open terminal
   const handleOpenTerminal = (host: SSHHost) => {
     setSelectedHost(host);
     setIsTerminalOpen(true);
   };
 
-  // 打开 SFTP
+  // Open SFTP
   const handleOpenSFTP = (host: SSHHost) => {
     console.log('[App] handleOpenSFTP called:', host);
     console.log('[App] Setting selectedHost and isSFTPOpen...');
@@ -170,21 +131,21 @@ function App() {
     console.log('[App] isSFTPOpen should be true now');
   };
 
-  // 打开编辑模态框
+  // Open edit modal
   const handleEditHost = (host: SSHHost) => {
     setEditingHost(host);
     setCopyingHost(null);
     setIsAddModalOpen(true);
   };
 
-  // 复制主机
+  // Copy host
   const handleCopyHost = (host: SSHHost) => {
     setEditingHost(null);
     setCopyingHost(host);
     setIsAddModalOpen(true);
   };
 
-  // 关闭模态框
+  // Close modal
   const handleCloseModal = () => {
     setIsAddModalOpen(false);
     setEditingHost(null);
@@ -204,12 +165,7 @@ function App() {
         </div>
         
         {/* Header */}
-        <Header
-          stats={stats}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onAddHost={() => setIsAddModalOpen(true)}
-        />
+        <Header />
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6 relative z-10">
@@ -223,6 +179,7 @@ function App() {
             onOpenSFTP={handleOpenSFTP}
             onAddHost={() => setIsAddModalOpen(true)}
             onCopyHost={handleCopyHost}
+            onRefresh={loadHosts}
           />
         </div>
       </main>

@@ -1,6 +1,17 @@
+// 磁盘信息类型
+export interface DiskInfo {
+  device: string;      // 设备名 (如 /dev/sda1)
+  mount_point: string; // 挂载点 (如 /, /data)
+  total: number;       // 总容量(GB)
+  used: number;        // 已用(GB)
+  free: number;        // 可用(GB)
+  usage: number;       // 使用率(百分比)
+}
+
 // SSH 主机类型
 export interface SSHHost {
   id: number;
+  host_id: string;  // 主机ID，格式：ins-xxxxxxxx
   name: string;
   address: string;
   port: number;
@@ -9,20 +20,19 @@ export interface SSHHost {
   password?: string;
   private_key?: string;
   key_passphrase?: string;
-  tags: string[];
+  key_id?: number;
+  tags?: string[];
   status: 'connected' | 'disconnected' | 'warning';
+  group?: string;
+  description?: string;
   system_type?: string;
   os_key?: string;  // 操作系统标识符，用于图标映射
-  os_version?: string;  // 操作系统版本号
+  os_version?: string;  // 操作系统版本号（完整版本，包含小版本号）
   kernel_version?: string;  // 内核版本
   architecture?: string;    // 架构类型
   cpu_cores?: number;       // CPU核心数
   memory_gb?: number;       // 内存容量(GB)
-  system_disk_total?: number;  // 系统盘总容量(GB)
-  system_disk_used?: number;   // 系统盘已用(GB)
-  data_disk_total?: number;    // 数据盘总容量(GB)
-  data_disk_used?: number;     // 数据盘已用(GB)
-  data_disk_name?: string;     // 数据盘设备名(如sdb1)
+  disks?: DiskInfo[];       // 磁盘信息列表
   last_seen?: string;
   created_at?: string;
   updated_at?: string;

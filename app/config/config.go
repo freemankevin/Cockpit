@@ -23,19 +23,26 @@ import (
 
 // SSHConnection SSH 连接
 type SSHConnection struct {
-	Client     *ssh.Client
-	HostID     uint
-	LastUsed   time.Time
-	ServerInfo *models.SystemInfo
+	Client       *ssh.Client
+	HostID       uint
+	LastUsed     time.Time
+	ServerInfo   *models.SystemInfo
+	TerminalOpen bool      // SSH终端是否打开
+	SFTPOpen     bool      // SFTP是否打开
+	KeepUntil    time.Time // 保持连接直到这个时间
 }
 
 // ConnectionPool 连接池
 type ConnectionPool struct {
 	connections map[uint]*SSHConnection
 	mu          sync.RWMutex
+	timeout     time.Duration // 默认超时时间
 }
 
 var Pool *ConnectionPool
+
+// 默认连接保持时间（10分钟）
+const DefaultKeepAliveDuration = 10 * time.Minute
 
 // 加密密钥 (实际应用中应从配置文件读取)
 var secretKey = []byte("deploy-master-secret-key-32b")
@@ -44,6 +51,78 @@ var secretKey = []byte("deploy-master-secret-key-32b")
 func InitConnectionPool() {
 	Pool = &ConnectionPool{
 		connections: make(map[uint]*SSHConnection),
+		timeout:     DefaultKeepAliveDuration,
+	}
+	// 启动后台清理任务
+	go Pool.cleanupLoop()
+}
+
+// cleanupLoop 定期清理过期连接
+func (p *ConnectionPool) cleanupLoop() {
+	ticker := time.NewTicker(30 * time.Second) // 每30秒检查一次
+	defer ticker.Stop()
+
+	for range ticker.C {
+		p.cleanupExpiredConnections()
+	}
+}
+
+// cleanupExpiredConnections 清理过期连接
+func (p *ConnectionPool) cleanupExpiredConnections() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	now := time.Now()
+	for hostID, conn := range p.connections {
+		// 如果终端或SFTP窗口打开，延长保持时间
+		if conn.TerminalOpen || conn.SFTPOpen {
+			conn.KeepUntil = now.Add(DefaultKeepAliveDuration)
+			log.Printf("[ConnectionPool] Host %d has active terminal/SFTP, extending keep-alive", hostID)
+			continue
+		}
+
+		// 检查是否超过保持时间
+		if now.After(conn.KeepUntil) {
+			log.Printf("[ConnectionPool] Connection expired for host %d, disconnecting", hostID)
+			conn.Client.Close()
+			delete(p.connections, hostID)
+		}
+	}
+}
+
+// SetTerminalOpen 设置SSH终端打开状态
+func (p *ConnectionPool) SetTerminalOpen(hostID uint, open bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if conn, exists := p.connections[hostID]; exists {
+		conn.TerminalOpen = open
+		if open {
+			conn.KeepUntil = time.Now().Add(DefaultKeepAliveDuration)
+			log.Printf("[ConnectionPool] Terminal opened for host %d, keeping connection alive", hostID)
+		} else {
+			// 终端关闭时，重新计算保持时间（从当前时间开始10分钟）
+			conn.KeepUntil = time.Now().Add(DefaultKeepAliveDuration)
+			log.Printf("[ConnectionPool] Terminal closed for host %d, keeping connection for 10 more minutes", hostID)
+		}
+	}
+}
+
+// SetSFTPOpen 设置SFTP打开状态
+func (p *ConnectionPool) SetSFTPOpen(hostID uint, open bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if conn, exists := p.connections[hostID]; exists {
+		conn.SFTPOpen = open
+		if open {
+			conn.KeepUntil = time.Now().Add(DefaultKeepAliveDuration)
+			log.Printf("[ConnectionPool] SFTP opened for host %d, keeping connection alive", hostID)
+		} else {
+			// SFTP关闭时，重新计算保持时间（从当前时间开始10分钟）
+			conn.KeepUntil = time.Now().Add(DefaultKeepAliveDuration)
+			log.Printf("[ConnectionPool] SFTP closed for host %d, keeping connection for 10 more minutes", hostID)
+		}
 	}
 }
 
@@ -67,7 +146,11 @@ func (p *ConnectionPool) Connect(hostID uint, address string, port int, username
 	}
 
 	// 添加认证方式
+	authMethods := []string{}
+	
 	if key != nil && key.PrivateKey != "" {
+		log.Printf("[SSH] Using key authentication (key_name=%s, has_passphrase=%v)",
+			key.Name, key.Passphrase != "")
 		var signer ssh.Signer
 		var err error
 		
@@ -78,26 +161,36 @@ func (p *ConnectionPool) Connect(hostID uint, address string, port int, username
 		}
 		
 		if err != nil {
+			log.Printf("[SSH] Failed to parse private key: %v", err)
 			return nil, fmt.Errorf("failed to parse private key: %v", err)
 		}
 		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
+		authMethods = append(authMethods, "publickey")
 	}
 	
 	if password != "" {
+		log.Printf("[SSH] Using password authentication")
 		config.Auth = append(config.Auth, ssh.Password(password))
+		authMethods = append(authMethods, "password")
 	}
+	
+	log.Printf("[SSH] Attempting connection to %s:%d with auth methods: %v", address, port, authMethods)
 
 	// 连接
 	addr := fmt.Sprintf("%s:%d", address, port)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
+		log.Printf("[SSH] Connection failed: %v", err)
 		return nil, fmt.Errorf("failed to connect: %v", err)
 	}
 
 	conn := &SSHConnection{
-		Client:   client,
-		HostID:   hostID,
-		LastUsed: time.Now(),
+		Client:       client,
+		HostID:       hostID,
+		LastUsed:     time.Now(),
+		KeepUntil:    time.Now().Add(DefaultKeepAliveDuration),
+		TerminalOpen: false,
+		SFTPOpen:     false,
 	}
 
 	p.connections[hostID] = conn

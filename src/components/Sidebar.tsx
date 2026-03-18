@@ -1,14 +1,4 @@
-import {
-  Server,
-  GitBranch,
-  Container,
-  Database,
-  History,
-  Settings,
-  LogOut,
-  ChevronRight,
-  Layers
-} from 'lucide-react';
+import { FC } from 'react';
 
 interface SidebarProps {
   hostCount?: number;
@@ -16,15 +6,15 @@ interface SidebarProps {
 
 const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
   const menuItems = [
-    { icon: Server, label: 'SSH 管理', active: true, badge: hostCount > 0 ? String(hostCount) : undefined },
-    { icon: GitBranch, label: '版本控制', active: false },
-    { icon: Container, label: '容器管理', active: false },
-    { icon: Database, label: '数据库部署', active: false },
+    { iconClass: 'fa-solid fa-server', label: 'Host Management', active: true, badge: hostCount > 0 ? String(hostCount) : undefined },
+    { iconClass: 'fa-solid fa-code-branch', label: 'Version Control', active: false },
+    { iconClass: 'fa-solid fa-box', label: 'Container Management', active: false },
+    { iconClass: 'fa-solid fa-database', label: 'Database Deployment', active: false },
   ];
 
   const systemItems = [
-    { icon: History, label: '部署历史', active: false },
-    { icon: Settings, label: '设置', active: false },
+    { iconClass: 'fa-solid fa-clock-rotate-left', label: 'Deployment History', active: false },
+    { iconClass: 'fa-solid fa-gear', label: 'Settings', active: false },
   ];
 
   return (
@@ -47,8 +37,8 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
         {/* Deploy Section */}
         <div>
           <div className="px-3 mb-2 flex items-center gap-2">
-            <Layers className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">部署功能</span>
+            <i className="fa-solid fa-layer-group w-3.5 h-3.5 text-gray-400"></i>
+            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Deployment Features</span>
           </div>
           <div className="space-y-0.5">
             {menuItems.map((item) => (
@@ -62,9 +52,8 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
-                <item.icon className={`w-[18px] h-[18px] transition-colors duration-200
-                  ${item.active ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} 
-                />
+                <i className={`${item.iconClass} w-[18px] h-[18px] text-center transition-colors duration-200
+                  ${item.active ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}></i>
                 <span className="flex-1">{item.label}</span>
                 {item.badge && (
                   <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-semibold rounded-md">
@@ -72,7 +61,7 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
                   </span>
                 )}
                 {item.active && (
-                  <ChevronRight className="w-3.5 h-3.5 text-blue-600" />
+                  <i className="fa-solid fa-chevron-right w-3.5 h-3.5 text-blue-600"></i>
                 )}
               </a>
             ))}
@@ -82,7 +71,7 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
         {/* System Section */}
         <div>
           <div className="px-3 mb-2">
-            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">系统</span>
+            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">System</span>
           </div>
           <div className="space-y-0.5">
             {systemItems.map((item) => (
@@ -96,9 +85,8 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
-                <item.icon className={`w-[18px] h-[18px] transition-colors duration-200
-                  ${item.active ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} 
-                />
+                <i className={`${item.iconClass} w-[18px] h-[18px] text-center transition-colors duration-200
+                  ${item.active ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}></i>
                 <span>{item.label}</span>
               </a>
             ))}
@@ -120,13 +108,13 @@ const Sidebar = ({ hostCount = 0 }: SidebarProps) => {
           </div>
           
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-gray-900 truncate">管理员</p>
+            <p className="text-[13px] font-semibold text-gray-900 truncate">Administrator</p>
             <p className="text-[11px] text-gray-500 truncate">admin@deploymaster.io</p>
           </div>
           
           <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg 
                            transition-all duration-200 opacity-0 group-hover:opacity-100">
-            <LogOut className="w-4 h-4" />
+            <i className="fa-solid fa-right-from-bracket w-4 h-4"></i>
           </button>
         </div>
       </div>

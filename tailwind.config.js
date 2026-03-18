@@ -8,14 +8,14 @@ export default {
     extend: {
       fontFamily: {
         sans: [
+          '"Inter"',
+          'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
-          '"SF Pro Text"',
-          '"SF Pro Display"',
+          '"Segoe UI"',
+          '"Roboto"',
           '"Helvetica Neue"',
-          '"PingFang SC"',
-          '"Hiragino Sans GB"',
-          '"Microsoft YaHei"',
+          '"Arial"',
           'sans-serif'
         ],
         mono: [
@@ -48,6 +48,8 @@ export default {
           'gray-5': '#E5E5EA',
           'gray-6': '#F2F2F7',
         },
+        // macOS 颜色扩展
+        'macos-red': '#FF3B30',
         // macOS 背景色
         background: {
           primary: '#FFFFFF',

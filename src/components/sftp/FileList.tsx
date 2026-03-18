@@ -101,18 +101,18 @@ const FileList = ({
             {/* Size */}
             <div className="w-20 text-right flex-shrink-0">
               {!file.is_dir && (
-                <span className="text-[12px] text-gray-500 font-mono">{file.size_formatted}</span>
+                <span className="text-[12px] text-gray-500">{file.size_formatted}</span>
               )}
             </div>
 
             {/* Modified Time */}
             <div className="w-36 text-right flex-shrink-0">
-              <span className="text-[12px] text-gray-500 font-mono">{file.modified_time_formatted}</span>
+              <span className="text-[12px] text-gray-500">{file.modified_time_formatted}</span>
             </div>
 
             {/* Permissions - Single line display */}
             <div className="w-24 text-right flex-shrink-0">
-              <span className="text-[12px] text-gray-500 font-mono whitespace-nowrap">
+              <span className="text-[12px] text-gray-500 whitespace-nowrap">
                 {file.permissions}
               </span>
             </div>
@@ -168,12 +168,12 @@ const FileList = ({
       {/* Context Menu */}
       {contextMenu && (
         <>
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-[100]"
             onClick={closeContextMenu}
           />
           <div
-            className="fixed z-50 bg-[#2a2a2a] rounded-lg shadow-xl border border-white/10 py-1 min-w-[160px]"
+            className="fixed z-[110] bg-[#2a2a2a] rounded-lg shadow-xl border border-white/10 py-1 min-w-[160px]"
             style={{ top: contextMenu.y, left: contextMenu.x }}
           >
             <button

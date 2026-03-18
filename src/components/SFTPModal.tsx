@@ -45,7 +45,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
     message: ''
   });
   
-  // 后台下载状态 - 用于最小化后重新打开
+  // Background download status - Used when reopening after minimizing
   const [backgroundDownload, setBackgroundDownload] = useState<{
     file: SFTPFile;
     progress: DownloadProgress;
@@ -57,7 +57,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
     isMinimized: false
   });
   
-  // Window size and position - 与终端保持一致的尺寸
+  // Window size and position - Consistent with terminal dimensions
   const [windowSize, setWindowSize] = useState({ width: 896, height: 600 }); // max-w-4xl ≈ 896px
   const [windowPosition, setWindowPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -93,18 +93,18 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
     }));
   }, [sftp.currentPath]);
 
-  // Filtered and sorted files - 目录、链接、文件分开排序
+  // Filtered and sorted files - Separate sorting for directories, links, and files
   const filteredFiles = useMemo(() => {
     let result = sftp.files;
     
-    // 如果有搜索查询，先过滤
+    // If there's a search query, filter first
     if (searchQuery.trim()) {
       result = result.filter(file => 
         file.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
-    // 排序逻辑：目录 > 链接 > 文件，各自按名称排序
+    // Sorting logic: directories > links > files, each sorted by name
     const directories = result.filter(f => f.is_dir && !f.is_link).sort((a, b) => a.name.localeCompare(b.name));
     const links = result.filter(f => f.is_link).sort((a, b) => a.name.localeCompare(b.name));
     const files = result.filter(f => !f.is_dir && !f.is_link).sort((a, b) => a.name.localeCompare(b.name));
@@ -112,14 +112,14 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
     return [...directories, ...links, ...files];
   }, [sftp.files, searchQuery]);
 
-  // Window controls - 与终端保持一致
+  // Window controls - Consistent with terminal
   const handleMinimize = () => {
     setWindowState(prev => ({ ...prev, isMinimized: !prev.isMinimized }));
     if (!windowState.isMinimized) {
-      // 最小化时保持宽度，只显示标题栏
+      // Keep width when minimized, only show title bar
       setWindowSize(prev => ({ width: prev.width, height: 40 }));
     } else {
-      // Restore - 与终端一致
+      // Restore - Consistent with terminal
       setWindowSize({ width: 896, height: 600 });
       const centerX = Math.max(0, (window.innerWidth - 896) / 2);
       const centerY = Math.max(0, (window.innerHeight - 600) / 2);
@@ -130,14 +130,14 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
   const handleMaximize = () => {
     setWindowState(prev => ({ ...prev, isMaximized: !prev.isMaximized }));
     if (!windowState.isMaximized) {
-      // 全屏模式 - 与终端一致，使用 inset-4 的边距
+      // Fullscreen mode - Consistent with terminal, using inset-4 margins
       setWindowSize({
         width: window.innerWidth - 32,
         height: window.innerHeight - 32
       });
       setWindowPosition({ x: 16, y: 16 });
     } else {
-      // Restore - 与终端一致
+      // Restore - Consistent with terminal
       setWindowSize({ width: 896, height: 600 });
       const centerX = Math.max(0, (window.innerWidth - 896) / 2);
       const centerY = Math.max(0, (window.innerHeight - 600) / 2);
@@ -518,7 +518,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
       return;
     }
     
-    // 初始化下载进度弹窗
+    // Initialize download progress dialog
     setDownloadingFile(file);
     const initialProgress: DownloadProgress = {
       progress: 0,
@@ -526,7 +526,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
       total_bytes: file.size,
       speed: '',
       stage: 'init',
-      message: '准备下载...'
+      message: 'Preparing to download...'
     };
     setDownloadProgress(initialProgress);
     setBackgroundDownload({ file, progress: initialProgress });
@@ -536,12 +536,12 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
     transfer.updateTransferTask(taskId, { status: 'transferring' });
     
     try {
-      // 使用带进度轮询的下载方法
+      // Use download method with progress polling
       const { blob } = await sftpApi.downloadFileWithProgress(
         host.id,
         file.path,
         (progressInfo) => {
-          // 更新游戏风格进度弹窗
+          // Update game-style progress dialog
           setDownloadProgress(progressInfo);
           setBackgroundDownload(prev => prev ? { ...prev, progress: progressInfo } : null);
           
@@ -555,7 +555,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
                     progressInfo.stage === 'completed' ? 'completed' : 'transferring'
           });
           
-          // 如果下载完成
+          // If download is complete
           if (progressInfo.stage === 'completed') {
             transfer.addTransferLog('download', `✓ Download complete: ${file.name}`, file.path, 'success', file.size_formatted);
           } else if (progressInfo.stage === 'error') {
@@ -574,14 +574,14 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
       document.body.appendChild(a);
       a.click();
       
-      // 延迟清理，确保下载已开始
+      // Delay cleanup to ensure download has started
       setTimeout(() => {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       }, 100);
       
       transfer.completeTransferTask(taskId, true);
-      setBackgroundDownload(null); // 清理后台下载状态
+      setBackgroundDownload(null); // Clear background download status
       success('Download Complete', `${file.name} downloaded successfully`);
       transfer.addTransferLog('download', `Downloaded: ${file.name}`, file.path, 'success', file.size_formatted);
     } catch (err) {
@@ -688,34 +688,28 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
             }}
             onMouseDown={handleMouseDown}
           >
-            {/* Minimized Title Bar - Mac Style - 与终端一致 */}
+            {/* Minimized Title Bar - Mac Style - Consistent with terminal */}
             <div className="window-header bg-gradient-to-b from-[#3a3a3a] to-[#2a2a2a] rounded-lg shadow-2xl border border-white/10 overflow-hidden">
               <div className="flex items-center px-3 py-2">
-                {/* Mac Window Controls - 与终端一致 */}
+                {/* Mac Window Controls - Consistent with terminal */}
                 <div className="flex items-center gap-2 mr-4">
                   <button
                     onClick={onClose}
                     className="w-3 h-3 rounded-full bg-[#ff5f57] hover:bg-[#ff5f57]/80 transition-colors flex items-center justify-center group"
                   >
-                    <svg className="w-2 h-2 text-[#990000] opacity-0 group-hover:opacity-100" viewBox="0 0 12 12">
-                      <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
+                    <i className="fa-solid fa-xmark text-[10px] text-[#990000] opacity-0 group-hover:opacity-100" />
                   </button>
                   <button
                     onClick={handleMinimize}
                     className="w-3 h-3 rounded-full bg-[#febc2e] hover:bg-[#febc2e]/80 transition-colors flex items-center justify-center group"
                   >
-                    <svg className="w-2 h-2 text-[#985700] opacity-0 group-hover:opacity-100" viewBox="0 0 12 12">
-                      <path d="M3 6h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
+                    <i className="fa-solid fa-minus text-[10px] text-[#985700] opacity-0 group-hover:opacity-100" />
                   </button>
                   <button
                     onClick={handleMaximize}
                     className="w-3 h-3 rounded-full bg-[#28c840] hover:bg-[#28c840]/80 transition-colors flex items-center justify-center group"
                   >
-                    <svg className="w-2 h-2 text-[#006500] opacity-0 group-hover:opacity-100" viewBox="0 0 12 12">
-                      <path d="M2 5l4-4 4 4M2 7l4 4 4-4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <i className="fa-solid fa-expand text-[10px] text-[#006500] opacity-0 group-hover:opacity-100" />
                   </button>
                 </div>
                 
@@ -727,9 +721,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
                   onClick={handleMinimize}
                   className="p-1 text-gray-400 hover:text-white"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
+                  <i className="fa-solid fa-chevron-up text-sm" />
                 </button>
               </div>
             </div>
@@ -763,36 +755,30 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
             onMouseDown={handleMouseDown}
           >
             
-            {/* Mac Style Title Bar - 与终端一致 */}
+            {/* Mac Style Title Bar - Consistent with terminal */}
             <div className="window-header flex items-center px-4 py-3 bg-gradient-to-b from-[#3a3a3a] to-[#2a2a2a] border-b border-white/5">
-              {/* Mac Window Controls - 与终端一致 */}
+              {/* Mac Window Controls - Consistent with terminal */}
               <div className="flex items-center gap-2 mr-4">
                 <button
                   onClick={onClose}
                   className="w-3 h-3 rounded-full bg-[#ff5f57] hover:bg-[#ff5f57]/80 transition-colors flex items-center justify-center group"
                   title="Close"
                 >
-                  <svg className="w-2 h-2 text-[#990000] opacity-0 group-hover:opacity-100" viewBox="0 0 12 12">
-                    <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
+                  <i className="fa-solid fa-xmark text-[10px] text-[#990000] opacity-0 group-hover:opacity-100" />
                 </button>
                 <button
                   onClick={handleMinimize}
                   className="w-3 h-3 rounded-full bg-[#febc2e] hover:bg-[#febc2e]/80 transition-colors flex items-center justify-center group"
                   title="Minimize"
                 >
-                  <svg className="w-2 h-2 text-[#985700] opacity-0 group-hover:opacity-100" viewBox="0 0 12 12">
-                    <path d="M3 6h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
+                  <i className="fa-solid fa-minus text-[10px] text-[#985700] opacity-0 group-hover:opacity-100" />
                 </button>
                 <button
                   onClick={handleMaximize}
                   className="w-3 h-3 rounded-full bg-[#28c840] hover:bg-[#28c840]/80 transition-colors flex items-center justify-center group"
                   title={windowState.isMaximized ? "Restore" : "Maximize"}
                 >
-                  <svg className="w-2 h-2 text-[#006500] opacity-0 group-hover:opacity-100" viewBox="0 0 12 12">
-                    <path d="M2 5l4-4 4 4M2 7l4 4 4-4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <i className="fa-solid fa-expand text-[10px] text-[#006500] opacity-0 group-hover:opacity-100" />
                 </button>
               </div>
 
@@ -805,7 +791,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
                   onChange={(e) => setPathInputValue(e.target.value)}
                   onKeyDown={handlePathKeyDown}
                   onBlur={() => setIsPathEditing(false)}
-                  className="flex-1 bg-[#1e1e1e] border border-white/20 rounded px-3 py-1 text-[13px] text-gray-200 font-mono focus:outline-none focus:border-blue-500"
+                  className="flex-1 bg-[#1e1e1e] border border-white/20 rounded px-3 py-1 text-[13px] text-gray-200 focus:outline-none focus:border-blue-500"
                   autoFocus
                 />
               ) : (
@@ -860,7 +846,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
                 </button>
 
                 {/* Upload with dropdown menu */}
-                <div className="relative">
+                <div className={`relative ${showUploadMenu ? 'z-40' : ''}`}>
                   <button
                     onClick={() => setShowUploadMenu(!showUploadMenu)}
                     className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 rounded transition-colors"
@@ -874,10 +860,10 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
                   {showUploadMenu && (
                     <>
                       <div
-                        className="fixed inset-0 z-10"
+                        className="fixed inset-0 z-30"
                         onClick={() => setShowUploadMenu(false)}
                       />
-                      <div className="absolute top-full left-0 mt-1 bg-[#2a2a2a] border border-white/10 rounded-md shadow-xl z-20 min-w-[140px] py-1">
+                      <div className="absolute top-full left-0 mt-1 bg-[#2a2a2a] border border-white/10 rounded-md shadow-xl z-[60] min-w-[140px] py-1">
                         <button
                           onClick={() => { handleUpload(); setShowUploadMenu(false); }}
                           className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 transition-colors"
@@ -1064,11 +1050,11 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
         }}
         onMinimize={() => {
           setShowDownloadProgress(false);
-          // 下载会在后台继续进行，保留 backgroundDownload 状态
+          // Download will continue in background, keep backgroundDownload status
         }}
       />
       
-      {/* 后台下载指示器 - 最小化后显示 */}
+      {/* Background download indicator - Show after minimizing */}
       {backgroundDownload && !showDownloadProgress &&
        (backgroundDownload.progress.stage === 'downloading' || backgroundDownload.progress.stage === 'init') && (
         <div
@@ -1080,13 +1066,13 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
           }}
         >
           <div className="bg-gradient-to-r from-blue-600/90 to-cyan-600/90 backdrop-blur-xl rounded-full px-5 py-2.5 shadow-lg border border-white/20 flex items-center gap-3 hover:scale-105 transition-transform">
-            {/* 下载图标 */}
+            {/* Download icon */}
             <div className="relative">
               <i className="fa-solid fa-cloud-arrow-down text-white text-lg" />
               <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             </div>
             
-            {/* 进度信息 */}
+            {/* Progress info */}
             <div className="flex items-center gap-3 text-white">
               <span className="text-sm font-medium max-w-[150px] truncate">
                 {backgroundDownload.file.name}
@@ -1096,7 +1082,7 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
               </span>
             </div>
             
-            {/* 进度条 */}
+            {/* Progress bar */}
             <div className="w-24 h-1.5 bg-white/20 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-all duration-300"
@@ -1104,16 +1090,16 @@ const SFTPModal = ({ host, onClose }: SFTPModalProps) => {
               />
             </div>
             
-            {/* 速度 */}
+            {/* Speed */}
             {backgroundDownload.progress.speed && (
               <span className="text-xs text-white/80">
                 {backgroundDownload.progress.speed}
               </span>
             )}
             
-            {/* 点击提示 */}
+            {/* Click hint */}
             <span className="text-xs text-white/60 ml-2">
-              点击查看
+              Click to view
             </span>
           </div>
         </div>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Key, Lock, Plug, Copy, Server, User, Globe, Hash, Eye, EyeOff } from 'lucide-react';
-import type { SSHHost, CreateHostRequest, UpdateHostRequest, SSHKey } from '@/types';
-import { keyApi } from '@/services/api';
+import type { SSHHost, CreateHostRequest, UpdateHostRequest } from '@/types';
+import { keyApi, type SSHKeyResponse } from '@/services/api';
 
 interface AddHostModalProps {
   host: SSHHost | null;
@@ -12,7 +11,7 @@ interface AddHostModalProps {
 
 const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProps) => {
   const [loading, setLoading] = useState(false);
-  const [keys, setKeys] = useState<SSHKey[]>([]);
+  const [keys, setKeys] = useState<SSHKeyResponse[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -26,7 +25,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
     tags: [] as string[],
   });
 
-  // 加载密钥列表
+  // Load key list
   useEffect(() => {
     const loadKeys = async () => {
       try {
@@ -41,7 +40,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
     loadKeys();
   }, []);
 
-  // 编辑模式或复制模式时填充表单
+  // Populate form in edit or copy mode
   useEffect(() => {
     if (host) {
       setFormData({
@@ -57,7 +56,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
       });
     } else if (copyingHost) {
       setFormData({
-        name: `${copyingHost.name} (副本)`,
+        name: `${copyingHost.name} (Copy)`,
         address: '',
         port: copyingHost.port,
         username: copyingHost.username,
@@ -82,39 +81,39 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
     }
   }, [host, copyingHost]);
 
-  // 表单验证
+  // Form validation
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
-      alert('请填写显示名称');
+      alert('Please enter display name');
       return false;
     }
     if (!formData.address.trim()) {
-      alert('请填写主机地址');
+      alert('Please enter host address');
       return false;
     }
     if (!formData.username.trim()) {
-      alert('请填写用户名');
+      alert('Please enter username');
       return false;
     }
-    // 编辑模式下，如果已有密码/私钥，允许不重新输入
+    // In edit mode, if password/private key already exists, allow not re-entering
     if (formData.auth_type === 'password' && !formData.password && !host) {
-      alert('请输入密码');
+      alert('Please enter password');
       return false;
     }
     if (formData.auth_type === 'key' && !formData.private_key && !host) {
-      alert('请选择或输入私钥');
+      alert('Please select or enter private key');
       return false;
     }
     return true;
   };
 
-  // 提交表单
+  // Submit form
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      // 构建提交数据
+      // Build submission data
       const submitData: Record<string, unknown> = {
         name: formData.name,
         address: formData.address,
@@ -123,51 +122,60 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
         auth_type: formData.auth_type,
         tags: formData.tags,
       };
-      
-      // 处理敏感字段
+
+      // Handle sensitive fields
       if (formData.auth_type === 'password') {
-        // 编辑模式下，如果密码为空则不发送（保留原值）
-        if (!host || formData.password) {
-          submitData.password = formData.password || undefined;
+        // In edit mode, if password is empty, don't send password field (keep original value)
+        // But we must send auth_type to ensure backend switches to password mode if it was key mode
+        if (formData.password) {
+          submitData.password = formData.password;
         }
+        // Clear key-related fields when switching to password mode
+        submitData.private_key = '';
+        submitData.key_passphrase = '';
       } else if (formData.auth_type === 'key') {
-        // 编辑模式下，如果私钥为空则不发送（保留原值）
-        if (!host || formData.private_key) {
-          submitData.private_key = formData.private_key || undefined;
-          submitData.key_passphrase = formData.key_passphrase || undefined;
+        // In edit mode, if private key is empty, don't send (keep original value)
+        // But we must send auth_type to ensure backend switches to key mode if it was password mode
+        if (formData.private_key && formData.private_key !== '__custom__') {
+          submitData.private_key = formData.private_key;
         }
+        if (formData.key_passphrase) {
+          submitData.key_passphrase = formData.key_passphrase;
+        }
+        // Clear password when switching to key mode
+        submitData.password = '';
       }
-      
-      console.log('提交数据:', submitData);
-      console.log('编辑模式:', !!host, '主机ID:', host?.id);
-      
+
+      console.log('Submission data:', submitData);
+      console.log('Edit mode:', !!host, 'Host ID:', host?.id);
+
       const success = await onSubmit(submitData as CreateHostRequest | UpdateHostRequest);
-      console.log('提交结果:', success);
-      
+      console.log('Submission result:', success);
+
       if (!success) {
-        alert('保存失败，请重试');
+        alert('Save failed, please try again');
       }
     } catch (error) {
-      console.error('提交错误:', error);
-      alert('保存失败，请查看控制台日志');
+      console.error('Submission error:', error);
+      alert('Save failed, please check console logs');
     } finally {
       setLoading(false);
     }
   };
 
-  // 获取标题
+  // Get title
   const getTitle = () => {
-    if (host) return '编辑 SSH 主机';
-    if (copyingHost) return '复制 SSH 主机';
-    return '添加 SSH 主机';
+    if (host) return 'Edit SSH Host';
+    if (copyingHost) return 'Copy SSH Host';
+    return 'Add SSH Host';
   };
 
-  // 获取提交按钮文本
+  // Get submit button text
   const getSubmitText = () => {
-    if (loading) return '保存中...';
-    if (host) return '保存修改';
-    if (copyingHost) return '创建副本';
-    return '测试并保存';
+    if (loading) return 'Saving...';
+    if (host) return 'Save Changes';
+    if (copyingHost) return 'Create Copy';
+    return 'Test and Save';
   };
 
   return (
@@ -179,7 +187,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 
                           flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Server className="w-5 h-5 text-white" />
+              <i className="fa-solid fa-server w-5 h-5 text-white"></i>
             </div>
             <div>
               <h3 className="text-[17px] font-semibold text-gray-900">
@@ -187,7 +195,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
               </h3>
               {copyingHost && (
                 <p className="text-[12px] text-gray-500">
-                  克隆自: {copyingHost.name}
+                  Cloned from: {copyingHost.name}
                 </p>
               )}
             </div>
@@ -197,18 +205,18 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 
                      rounded-lg transition-all duration-200"
           >
-            <X className="w-5 h-5" />
+            <i className="fa-solid fa-xmark w-5 h-5"></i>
           </button>
         </div>
 
         {/* Form */}
         <div className="p-6 space-y-5">
-          {/* Name & Address */}
+          {/* Host Name & Main IPv4 Address */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Server className="w-3.5 h-3.5 text-gray-400" />
-                显示名称
+                <i className="fa-solid fa-server w-3.5 h-3.5 text-gray-400"></i>
+                Host Name
               </label>
               <input
                 type="text"
@@ -217,24 +225,24 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
                          transition-all duration-200
                          focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
                          hover:border-gray-300"
-                placeholder="例如：Production-API"
+                placeholder="e.g.: Production-API"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-gray-400" />
-                主机地址
+                <i className="fa-solid fa-globe w-3.5 h-3.5 text-gray-400"></i>
+                IPv4 Address
               </label>
               <input
                 type="text"
                 className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl
-                         text-[13px] text-gray-900 placeholder-gray-400 font-mono
+                         text-[13px] text-gray-900 placeholder-gray-400
                          transition-all duration-200
                          focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
                          hover:border-gray-300"
-                placeholder="IP 或域名"
+                placeholder="Public IP or Private IP"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
@@ -245,13 +253,13 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Hash className="w-3.5 h-3.5 text-gray-400" />
-                端口
+                <i className="fa-solid fa-hashtag w-3.5 h-3.5 text-gray-400"></i>
+                Port
               </label>
               <input
                 type="number"
                 className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl
-                         text-[13px] text-gray-900 font-mono
+                         text-[13px] text-gray-900
                          transition-all duration-200
                          focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
                          hover:border-gray-300"
@@ -261,14 +269,14 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
             </div>
             <div className="space-y-2">
               <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-gray-400" />
-                用户名
+                <i className="fa-solid fa-user w-3.5 h-3.5 text-gray-400"></i>
+                Username
               </label>
               <input
                 type="text"
                 className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl
                          text-[13px] text-gray-900 placeholder-gray-400
-                         transition-all duration-200
+                         font-sans transition-all duration-200
                          focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
                          hover:border-gray-300"
                 placeholder="root"
@@ -281,7 +289,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
           {/* Auth Type */}
           <div className="space-y-2">
             <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide">
-              认证方式
+              Authentication Method
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -294,8 +302,8 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
                             : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                           }`}
               >
-                <Key className="w-4 h-4" />
-                SSH 密钥
+                <i className="fa-solid fa-key w-4 h-4"></i>
+                SSH Key
               </button>
               <button
                 type="button"
@@ -307,42 +315,84 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
                             : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                           }`}
               >
-                <Lock className="w-4 h-4" />
-                密码
+                <i className="fa-solid fa-lock w-4 h-4"></i>
+                Password
               </button>
             </div>
           </div>
 
           {/* Auth Input */}
           {formData.auth_type === 'key' ? (
-            <div className="space-y-2">
-              <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-gray-400" />
-                选择密钥
-              </label>
-              <select
-                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl
-                         text-[13px] text-gray-900
-                         transition-all duration-200
-                         focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
-                         hover:border-gray-300 appearance-none cursor-pointer"
-                value={formData.private_key}
-                onChange={(e) => setFormData({ ...formData, private_key: e.target.value })}
-              >
-                <option value="">选择已保存的密钥</option>
-                {keys.map((key) => (
-                  <option key={key.id} value={key.id.toString()}>
-                    {key.name} ({key.key_type.toUpperCase()})
-                  </option>
-                ))}
-                <option value="__custom__">+ 手动输入私钥</option>
-              </select>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <i className="fa-solid fa-key w-3.5 h-3.5 text-gray-400"></i>
+                  Select Key
+                </label>
+                <select
+                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl
+                           text-[13px] text-gray-900
+                           transition-all duration-200
+                           focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
+                           hover:border-gray-300 appearance-none cursor-pointer"
+                  value={formData.private_key}
+                  onChange={(e) => setFormData({ ...formData, private_key: e.target.value })}
+                >
+                  <option value="">Select saved key</option>
+                  {keys.map((key) => (
+                    <option key={key.id} value={key.id.toString()}>
+                      {key.name} ({key.type.toUpperCase()})
+                    </option>
+                  ))}
+                  <option value="__custom__">+ Manually enter private key</option>
+                </select>
+              </div>
+
+              {/* Manual private key input */}
+              {formData.private_key === '__custom__' && (
+                <div className="space-y-2 animate-fade-in">
+                  <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+                    <i className="fa-solid fa-pen-to-square w-3.5 h-3.5 text-gray-400"></i>
+                    Private Key Content
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl
+                             text-[12px] text-gray-900 placeholder-gray-400 font-mono
+                             transition-all duration-200
+                             focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
+                             hover:border-gray-300 resize-none"
+                    rows={6}
+                    placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"
+                    value={formData.private_key === '__custom__' ? '' : formData.private_key}
+                    onChange={(e) => setFormData({ ...formData, private_key: e.target.value })}
+                  />
+                </div>
+              )}
+
+              {/* Key Passphrase (optional) */}
+              <div className="space-y-2">
+                <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <i className="fa-solid fa-lock w-3.5 h-3.5 text-gray-400"></i>
+                  Key Passphrase <span className="text-gray-400 font-normal normal-case">(Optional)</span>
+                </label>
+                <input
+                  type="password"
+                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl
+                           text-[13px] text-gray-900 placeholder-gray-400
+                           transition-all duration-200
+                           focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
+                           hover:border-gray-300"
+                  placeholder="Enter passphrase if your key is encrypted"
+                  value={formData.key_passphrase}
+                  onChange={(e) => setFormData({ ...formData, key_passphrase: e.target.value })}
+                />
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
               <label className="text-[12px] font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-gray-400" />
-                密码
+                <i className="fa-solid fa-lock w-3.5 h-3.5 text-gray-400"></i>
+                Password
               </label>
               <div className="relative">
                 <input
@@ -352,7 +402,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
                            transition-all duration-200
                            focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
                            hover:border-gray-300"
-                  placeholder={host ? "留空保持原密码不变" : "输入密码"}
+                  placeholder={host ? "Leave blank to keep current password" : "Enter password"}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
@@ -362,13 +412,9 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1
                            text-gray-400 hover:text-gray-600
                            transition-colors rounded-md hover:bg-gray-100"
-                  title={showPassword ? "隐藏密码" : "显示密码"}
+                  title={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} w-4 h-4`}></i>
                 </button>
               </div>
             </div>
@@ -379,12 +425,12 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
             <div className="p-4 bg-indigo-50 border border-indigo-200/60 rounded-xl">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                  <Copy className="w-4 h-4 text-indigo-600" />
+                  <i className="fa-solid fa-copy w-4 h-4 text-indigo-600"></i>
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-indigo-900">正在克隆主机配置</p>
+                  <p className="text-[13px] font-semibold text-indigo-900">Cloning Host Configuration</p>
                   <p className="text-[12px] text-indigo-700 mt-1">
-                    已复制 {copyingHost.name} 的认证配置，请填写新的主机地址和名称。
+                    Copied authentication config from {copyingHost.name}. Please fill in new host address and name.
                   </p>
                 </div>
               </div>
@@ -400,7 +446,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
                      hover:text-gray-800 hover:bg-gray-200/50 
                      transition-all duration-200"
           >
-            取消
+            Cancel
           </button>
           <button
             onClick={handleSubmit}
@@ -414,15 +460,12 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
           >
             {loading ? (
               <>
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                保存中...
+                <i className="fa-solid fa-circle-notch animate-spin w-4 h-4"></i>
+                Saving...
               </>
             ) : (
               <>
-                <Plug className="w-4 h-4" />
+                <i className="fa-solid fa-plug w-4 h-4"></i>
                 {getSubmitText()}
               </>
             )}

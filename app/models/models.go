@@ -1,14 +1,26 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"gorm.io/gorm"
 )
 
+// DiskInfoJSON 磁盘信息（用于JSON存储）
+type DiskInfoJSON struct {
+	Device     string  `json:"device"`      // 设备名 (如 /dev/sda1)
+	MountPoint string  `json:"mount_point"` // 挂载点 (如 /, /data)
+	Total      int     `json:"total"`       // 总容量(GB)
+	Used       int     `json:"used"`        // 已用(GB)
+	Free       int     `json:"free"`        // 可用(GB)
+	Usage      float64 `json:"usage"`       // 使用率(百分比)
+}
+
 // Host 主机模型
 type Host struct {
 	ID          uint      `json:"id" gorm:"primaryKey"`
+	HostID      string    `json:"host_id" gorm:"column:host_id;index;default:''"` // 主机ID，格式：ins-xxxxxxxx
 	Name        string    `json:"name" gorm:"not null"`
 	Host        string    `json:"address" gorm:"column:host;not null"`  // 主机地址，返回给前端时用 address
 	Port        int       `json:"port" gorm:"default:22"`
@@ -18,6 +30,17 @@ type Host struct {
 	AuthType    string    `json:"auth_type" gorm:"-"`                    // 认证类型，计算字段，不存储在数据库
 	Group       string    `json:"group" gorm:"default:''"`
 	Description string    `json:"description"`
+	
+	// 系统信息字段
+	SystemType      string          `json:"system_type" gorm:"column:system_type"`           // 系统类型 (linux, windows, etc.)
+	OSKey           string          `json:"os_key" gorm:"column:os_key"`                     // 操作系统标识符 (ubuntu, centos, etc.)
+	OSVersion       string          `json:"os_version" gorm:"column:os_version"`             // 操作系统版本号（完整版本，包含小版本号）
+	KernelVersion   string          `json:"kernel_version" gorm:"column:kernel_version"`     // 内核版本
+	Architecture    string          `json:"architecture" gorm:"column:architecture"`         // 架构类型 (x86_64, arm64, etc.)
+	CPUCores        int             `json:"cpu_cores" gorm:"column:cpu_cores;default:0"`     // CPU核心数
+	MemoryGB        int             `json:"memory_gb" gorm:"column:memory_gb;default:0"`     // 内存容量(GB)
+	Disks           json.RawMessage `json:"disks" gorm:"column:disks;type:text"`             // 磁盘信息列表(JSON格式)
+
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

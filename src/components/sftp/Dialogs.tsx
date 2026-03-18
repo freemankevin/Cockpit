@@ -208,7 +208,7 @@ export const FileEditor = ({ isOpen, file, content, saving, onContentChange, onS
   );
 };
 
-// Loading Overlay - 美化设计
+// Loading Overlay - Beautiful design
 interface LoadingOverlayProps {
   isOpen: boolean;
   hostName: string;
@@ -224,27 +224,25 @@ export const LoadingOverlay = ({ isOpen, hostName }: LoadingOverlayProps) => {
     >
       <div className="bg-[#1e1e1e] rounded-xl shadow-2xl p-8 border border-white/10 min-w-[280px]">
         <div className="flex flex-col items-center gap-5">
-          {/* 动画效果 - 脉冲圆环 */}
+          {/* Animation effect - pulsing ring */}
           <div className="relative">
             <div className="w-14 h-14 rounded-full border-2 border-blue-500/20" />
             <div className="absolute inset-0 w-14 h-14 rounded-full border-2 border-t-blue-400 border-r-blue-400/50 border-b-transparent border-l-transparent animate-spin" />
             <div className="absolute inset-2 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
+              <i className="fa-solid fa-arrow-right text-blue-400" />
             </div>
           </div>
           
-          {/* 文字信息 */}
+          {/* Text info */}
           <div className="text-center">
-            <p className="text-[15px] text-gray-200 font-medium">正在连接</p>
+            <p className="text-[15px] text-gray-200 font-medium">Connecting</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <p className="text-[13px] text-gray-500 font-mono">{hostName}</p>
+              <p className="text-[13px] text-gray-500">{hostName}</p>
             </div>
           </div>
           
-          {/* 进度指示器 */}
+          {/* Progress indicator */}
           <div className="w-full flex items-center justify-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />

@@ -84,34 +84,62 @@ export const hostApi = {
     api.post<unknown, CommandResult>(`/hosts/${id}/execute`, { command }),
 
   // 搜索主机
-  search: (query: string) => 
+  search: (query: string) =>
     api.get<unknown, ApiResponse<SSHHost[]>>(`/hosts/search?q=${encodeURIComponent(query)}`),
 
   // 获取统计信息
-  getStats: () => 
+  getStats: () =>
     api.get<unknown, ApiResponse<HostStats>>('/hosts/stats'),
+
+  // 连接主机
+  connect: (id: number) =>
+    api.post<unknown, ApiResponse<{ message: string; host_id: number; connected: boolean; server_info?: unknown }>>(`/hosts/${id}/connect`),
+
+  // 断开主机
+  disconnect: (id: number) =>
+    api.post<unknown, ApiResponse<void>>(`/hosts/${id}/disconnect`),
+
+  // 刷新系统信息（重新连接并获取最新信息）
+  refreshSystemInfo: async (id: number) => {
+    // 先断开连接
+    try {
+      await api.post(`/hosts/${id}/disconnect`);
+    } catch (e) {
+      // 忽略断开错误
+    }
+    // 重新连接以获取最新系统信息
+    return api.post<unknown, ApiResponse<{ message: string; host_id: number; connected: boolean; server_info?: unknown }>>(`/hosts/${id}/connect`);
+  },
 };
 
 // ==================== SSH 密钥 API ====================
 
+export interface SSHKeyResponse {
+  id: number;
+  name: string;
+  type: string;
+  public_key: string;
+  comment?: string;
+}
+
 export const keyApi = {
   // 获取所有密钥
-  getAll: () => 
-    api.get<unknown, ApiResponse<SSHKey[]>>('/keys'),
+  getAll: () =>
+    api.get<unknown, ApiResponse<SSHKeyResponse[]>>('/keys'),
 
   // 添加密钥
-  create: (data: { name: string; key_type: string; private_key: string; public_key?: string }) => 
-    api.post<unknown, ApiResponse<{ id: number }>>('/keys', data),
+  create: (data: { name: string; type: string; private_key: string; public_key?: string; passphrase?: string }) =>
+    api.post<unknown, ApiResponse<SSHKeyResponse>>('/keys', data),
 
   // 删除密钥
-  delete: (id: number) => 
+  delete: (id: number) =>
     api.delete<unknown, ApiResponse<void>>(`/keys/${id}`),
 
   // 生成密钥对
-  generate: (name: string, keyType: 'rsa' | 'ed25519') => 
-    api.post<unknown, ApiResponse<{ id: number; public_key: string }>>('/keys/generate', { 
-      name, 
-      key_type: keyType 
+  generate: (name: string, keyType: 'rsa' | 'ed25519') =>
+    api.post<unknown, ApiResponse<{ id: number; name: string; type: string; public_key: string }>>('/keys/generate', {
+      name,
+      type: keyType
     }),
 };
 
@@ -146,7 +174,7 @@ export const terminalApi = {
   getWebSocketUrl: (hostId: number) => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host; // 包含主机名和端口
-    return `${protocol}//${host}/api/terminal/ws/${hostId}`;
+    return `${protocol}//${host}/api/terminal/${hostId}`;
   },
 };
 
