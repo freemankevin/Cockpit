@@ -194,14 +194,14 @@ export const HostListItem = ({
             >
               <div className="flex-1 min-w-0 w-full">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-500">System Disk</span>
+                  <span className="text-xs text-gray-500">系统盘</span>
                   <span className={`text-xs font-medium ${getDiskTextColor(systemDisk.usage)}`}>
                     {systemDisk.usage.toFixed(0)}%
                   </span>
                 </div>
                 <DiskProgressBar usage={systemDisk.usage} className="w-full" />
                 <div className="text-[10px] text-gray-400 mt-0.5">
-                  {systemDisk.total}GB
+                  {systemDisk.used}G / {systemDisk.total}G
                 </div>
               </div>
               {host.disks && host.disks.length > 1 && (
@@ -277,28 +277,38 @@ export const HostListItem = ({
       {isExpanded && host.disks && host.disks.length > 1 && (
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
           <div className="grid grid-cols-4 gap-3">
-            {host.disks.map((disk, index) => (
-              <div key={index} className="bg-white rounded-lg p-3 border border-gray-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <i className={`fa-solid fa-hard-drive w-4 h-4 ${disk.mount_point === '/' ? 'text-blue-500' : 'text-gray-400'}`}></i>
-                    <span className="text-xs font-medium text-gray-700">
-                      {disk.mount_point === '/' ? 'System Disk' : disk.mount_point || disk.device}
+            {host.disks.map((disk, index) => {
+              const isSystemDisk = disk.mount_point === '/';
+              return (
+                <div key={index} className="bg-white rounded-lg p-3 border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <i className={`fa-solid fa-hard-drive w-4 h-4 ${isSystemDisk ? 'text-blue-500' : 'text-gray-400'}`}></i>
+                      <span className="text-xs font-medium text-gray-700">
+                        {isSystemDisk ? '系统盘' : '数据盘'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-gray-400">
+                      {disk.device.split('/').pop()}
                     </span>
                   </div>
-                  <span className="text-[10px] text-gray-400">
-                    {disk.device.split('/').pop()}
-                  </span>
+                  <DiskProgressBar usage={disk.usage} className="mb-2" />
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-gray-400">{disk.used}G / {disk.total}G</span>
+                    <span className={`font-medium ${getDiskTextColor(disk.usage)}`}>
+                      {disk.usage.toFixed(1)}%
+                    </span>
+                  </div>
+                  {/* Show mount point for data disks */}
+                  {!isSystemDisk && disk.mount_point && (
+                    <div className="text-[10px] text-gray-400 mt-1 truncate" title={disk.mount_point}>
+                      <i className="fa-solid fa-folder text-[8px] mr-1"></i>
+                      {disk.mount_point}
+                    </div>
+                  )}
                 </div>
-                <DiskProgressBar usage={disk.usage} className="mb-2" />
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-gray-400">{disk.used}G / {disk.total}G</span>
-                  <span className={`font-medium ${getDiskTextColor(disk.usage)}`}>
-                    {disk.usage.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

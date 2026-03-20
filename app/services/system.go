@@ -180,42 +180,211 @@ func getMemoryInfo(hostID uint) config.MemoryInfo {
 func getDiskInfo(hostID uint) []config.DiskInfo {
 	var disks []config.DiskInfo
 
-	output, err := config.Pool.ExecuteCommand(hostID, "df -B1 | grep '^/dev'")
+	// Step 1: Get system disk info using df -Th /
+	// This gives us the disk that contains "/" mount point
+	systemDfOutput, err := config.Pool.ExecuteCommand(hostID, "df -B1 / 2>/dev/null | tail -1")
+	if err == nil && systemDfOutput != "" {
+		parts := strings.Fields(systemDfOutput)
+		if len(parts) >= 6 {
+			var total, used uint64
+			fmt.Sscanf(parts[1], "%d", &total)
+			fmt.Sscanf(parts[2], "%d", &used)
+			
+			usagePercent := float64(0)
+			if total > 0 {
+				usagePercent = float64(used) / float64(total) * 100
+			}
+
+			// Get the physical disk device for this mount
+			device := parts[0]
+			physicalDevice := getPhysicalDiskDevice(hostID, device)
+			
+			disks = append(disks, config.DiskInfo{
+				Device:     physicalDevice,
+				MountPoint: "/",
+				FileSystem: device,
+				Total:      total,
+				Used:       used,
+				Free:       total - used,
+				Usage:      usagePercent,
+			})
+		}
+	}
+
+	// Step 2: Get all physical disks
+	lsblkOutput, err := config.Pool.ExecuteCommand(hostID, "lsblk -d -o NAME,SIZE -b 2>/dev/null | grep -v 'loop\\|NAME\\|sr\\|fd'")
 	if err != nil {
 		return disks
 	}
 
-	for _, line := range strings.Split(output, "\n") {
+	// Parse physical disks
+	type physDisk struct {
+		name string
+		size uint64
+	}
+	var physicalDisks []physDisk
+	for _, line := range strings.Split(lsblkOutput, "\n") {
 		if line == "" {
 			continue
 		}
-
 		parts := strings.Fields(line)
-		if len(parts) >= 6 {
-			var total, used, free uint64
-			fmt.Sscanf(parts[1], "%d", &total)
-			fmt.Sscanf(parts[2], "%d", &used)
-			fmt.Sscanf(parts[3], "%d", &free)
+		if len(parts) < 2 {
+			continue
+		}
+		name := parts[0]
+		var size uint64
+		fmt.Sscanf(parts[1], "%d", &size)
+		if size >= 1024*1024*1024 { // >= 1GB
+			physicalDisks = append(physicalDisks, physDisk{name: name, size: size})
+		}
+	}
 
-			usage := float64(0)
-			if total > 0 {
-				usage = float64(used) / float64(total) * 100
+	// Step 3: Find mount points for each physical disk (excluding system disk)
+	// Get all mount points from df
+	dfAllOutput, _ := config.Pool.ExecuteCommand(hostID, "df -B1 2>/dev/null")
+	diskMountMap := make(map[string]string) // physical disk -> mount point
+
+	for _, line := range strings.Split(dfAllOutput, "\n") {
+		if line == "" || !strings.HasPrefix(line, "/dev/") {
+			continue
+		}
+		parts := strings.Fields(line)
+		if len(parts) < 6 {
+			continue
+		}
+
+		device := parts[0]
+		mountPoint := parts[5]
+
+		// Skip /boot and /boot/efi
+		if mountPoint == "/boot" || mountPoint == "/boot/efi" ||
+		   strings.HasPrefix(mountPoint, "/boot/") {
+			continue
+		}
+
+		// Skip "/" (already handled as system disk)
+		if mountPoint == "/" {
+			continue
+		}
+
+		// Get physical disk for this device
+		physicalDevice := getPhysicalDiskDevice(hostID, device)
+		physicalName := strings.TrimPrefix(physicalDevice, "/dev/")
+		
+		// Check if this is a different physical disk than system disk
+		if len(disks) > 0 && disks[0].Device == physicalDevice {
+			continue // Same as system disk, skip
+		}
+
+		// Store the mount point for this physical disk
+		if _, exists := diskMountMap[physicalName]; !exists {
+			diskMountMap[physicalName] = mountPoint
+		}
+	}
+
+	// Step 4: Get disk info for data disks
+	for _, pd := range physicalDisks {
+		mountPoint, hasMount := diskMountMap[pd.name]
+		
+		// Skip if this is the system disk
+		if len(disks) > 0 && disks[0].Device == "/dev/"+pd.name {
+			continue
+		}
+
+		if hasMount {
+			// Get df info for this mount point
+			dfOutput, err := config.Pool.ExecuteCommand(hostID, "df -B1 "+mountPoint+" 2>/dev/null | tail -1")
+			if err == nil && dfOutput != "" {
+				parts := strings.Fields(dfOutput)
+				if len(parts) >= 6 {
+					var total, used uint64
+					fmt.Sscanf(parts[1], "%d", &total)
+					fmt.Sscanf(parts[2], "%d", &used)
+					
+					usagePercent := float64(0)
+					if total > 0 {
+						usagePercent = float64(used) / float64(total) * 100
+					}
+
+					disks = append(disks, config.DiskInfo{
+						Device:     "/dev/" + pd.name,
+						MountPoint: mountPoint,
+						FileSystem: parts[0],
+						Total:      total,
+						Used:       used,
+						Free:       total - used,
+						Usage:      usagePercent,
+					})
+				}
 			}
-
+		} else {
+			// No mount point, just show the physical disk with size
 			disks = append(disks, config.DiskInfo{
-				Device:     parts[0],
-				MountPoint: parts[5],
-				FileSystem: parts[0],
-				Total:      total,
-				Used:       used,
-				Free:       free,
-				Usage:      usage,
+				Device:     "/dev/" + pd.name,
+				MountPoint: "",
+				FileSystem: "/dev/" + pd.name,
+				Total:      pd.size,
+				Used:       0,
+				Free:       pd.size,
+				Usage:      0,
 			})
 		}
 	}
 
 	return disks
 }
+
+// getPhysicalDiskDevice returns the physical disk device for a given device path
+// e.g., /dev/mapper/ubuntu--vg-ubuntu--lv -> /dev/sda
+func getPhysicalDiskDevice(hostID uint, device string) string {
+	// Normalize device name
+	deviceName := strings.TrimPrefix(device, "/dev/")
+	deviceName = strings.TrimPrefix(deviceName, "mapper/")
+
+	// Use lsblk to get the disk device
+	output, err := config.Pool.ExecuteCommand(hostID, "lsblk -no PKNAME /dev/"+deviceName+" 2>/dev/null || lsblk -no PKNAME /dev/mapper/"+deviceName+" 2>/dev/null")
+	if err == nil {
+		parent := strings.TrimSpace(output)
+		if parent != "" {
+			// Check if parent is a physical disk (not another partition/LVM)
+			for {
+				// Check if this is a disk type
+				typeOutput, err := config.Pool.ExecuteCommand(hostID, "lsblk -no TYPE /dev/"+parent+" 2>/dev/null")
+				if err != nil {
+					break
+				}
+				deviceType := strings.TrimSpace(typeOutput)
+				if deviceType == "disk" {
+					return "/dev/" + parent
+				}
+				// Get parent of this device
+				parentOutput, err := config.Pool.ExecuteCommand(hostID, "lsblk -no PKNAME /dev/"+parent+" 2>/dev/null")
+				if err != nil {
+					break
+				}
+				nextParent := strings.TrimSpace(parentOutput)
+				if nextParent == "" || nextParent == parent {
+					break
+				}
+				parent = nextParent
+			}
+			return "/dev/" + parent
+		}
+	}
+
+	// Fallback: try to find by prefix match
+	lsblkOutput, _ := config.Pool.ExecuteCommand(hostID, "lsblk -d -o NAME 2>/dev/null | grep -v loop | grep -v NAME")
+	for _, line := range strings.Split(lsblkOutput, "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" && strings.HasPrefix(deviceName, line) {
+			return "/dev/" + line
+		}
+	}
+
+	return device
+}
+
+
 
 func getNetworkInfo(hostID uint) []config.NetInfo {
 	var nets []config.NetInfo

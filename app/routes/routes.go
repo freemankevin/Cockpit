@@ -102,6 +102,12 @@ func SetupRouter() *gin.Engine {
 
 		// WebSocket 终端
 		api.GET("/terminal/:id", terminalHandler)
+
+		// Certificate management (for custom HTTPS certificates)
+		api.GET("/certificates", getCertificateInfo)
+		api.POST("/certificates", uploadCertificate)
+		api.DELETE("/certificates", deleteCertificate)
+		api.POST("/certificates/generate", generateSelfSignedCertificate)
 	}
 
 	return router

@@ -106,3 +106,6 @@ app/data/
 sftp-transfer/target/
 Cargo.lock
 .kilocode/mcp.json
+
+# HTTPS development certificates
+cert/
