@@ -13,8 +13,7 @@ import {
   INITIAL_PROGRESS,
   createProgressPolling,
   collectFiles,
-  handleUploadComplete,
-  handleUploadCancelled
+  handleUploadComplete
 } from './uploadUtils';
 
 interface UseUploadManagerProps {
@@ -26,6 +25,17 @@ interface UseUploadManagerProps {
   onRefresh: () => void;
 }
 
+// Single upload task state
+export interface UploadTask {
+  id: string;
+  uploadId: string;
+  taskId: string;
+  filename: string;
+  fileSize: number;
+  progress: UploadProgress;
+  abortController: AbortController;
+}
+
 interface UseUploadManagerReturn {
   fileInputRef: React.RefObject<HTMLInputElement>;
   folderInputRef: React.RefObject<HTMLInputElement>;
@@ -34,14 +44,13 @@ interface UseUploadManagerReturn {
   handleUploadFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleDropUpload: (items: DataTransferItemList) => Promise<void>;
   cancelUpload: (uploadId: string) => void;
+  // Multiple concurrent upload tasks
+  uploadTasks: UploadTask[];
+  // Dialog state for viewing task details
+  viewingTask: UploadTask | null;
   showUploadProgress: boolean;
-  uploadingFile: { name: string; size: number } | null;
-  uploadProgress: UploadProgress;
-  backgroundUpload: BackgroundUploadState | null;
+  setViewingTask: (task: UploadTask | null) => void;
   setShowUploadProgress: (show: boolean) => void;
-  setBackgroundUpload: (upload: BackgroundUploadState | null) => void;
-  currentUploadId: string | null;
-  currentTaskId: string | null;
   // Disk space error dialog
   showDiskSpaceError: boolean;
   diskSpaceInfo: DiskInfo | null;
@@ -61,13 +70,10 @@ export function useUploadManager({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  // Modal and background upload state
+  // Multiple concurrent upload tasks
+  const [uploadTasks, setUploadTasks] = useState<UploadTask[]>([]);
+  const [viewingTask, setViewingTask] = useState<UploadTask | null>(null);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
-  const [uploadingFile, setUploadingFile] = useState<{ name: string; size: number } | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress>(INITIAL_PROGRESS);
-  const [backgroundUpload, setBackgroundUpload] = useState<BackgroundUploadState | null>(null);
-  const [currentUploadId, setCurrentUploadId] = useState<string | null>(null);
-  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   
   // Disk space error dialog state
   const [showDiskSpaceError, setShowDiskSpaceError] = useState(false);
@@ -82,7 +88,21 @@ export function useUploadManager({
     setDiskSpaceErrorCode(null);
   }, []);
 
-  // Upload single file with real progress tracking
+  // Update a specific upload task's progress
+  const updateUploadTaskProgress = useCallback((uploadId: string, progress: Partial<UploadProgress>) => {
+    setUploadTasks(prev => prev.map(task => 
+      task.uploadId === uploadId 
+        ? { ...task, progress: { ...task.progress, ...progress } }
+        : task
+    ));
+  }, []);
+
+  // Remove an upload task
+  const removeUploadTask = useCallback((uploadId: string) => {
+    setUploadTasks(prev => prev.filter(task => task.uploadId !== uploadId));
+  }, []);
+
+  // Upload single file with real progress tracking - supports concurrent uploads
   const uploadFileWithProgress = useCallback(async (
     file: File,
     relativePath?: string
@@ -90,11 +110,14 @@ export function useUploadManager({
     const uploadId = generateUploadId();
     const fileName = relativePath || file.name;
     const filePath = `${currentPath}/${fileName}`;
+    
+    // Create transfer task
     const taskId = await transfer.createTransferTask(
       'upload',
       file.name,
       filePath,
-      file.size
+      file.size,
+      currentPath
     );
 
     // Store uploadId to task for cancellation
@@ -104,11 +127,35 @@ export function useUploadManager({
       `Starting upload: ${fileName}`,
       filePath,
       'info',
-      formatFileSize(file.size)
+      formatFileSize(file.size),
+      currentPath
     );
 
     // Create AbortController for cancellation
     const abortController = new AbortController();
+
+    // Create initial progress
+    const initialProgress: UploadProgress = {
+      progress: 0,
+      bytes_transferred: 0,
+      total_bytes: file.size,
+      speed: '',
+      stage: 'init',
+      message: 'Preparing to upload...'
+    };
+
+    // Create upload task and add to list
+    const newTask: UploadTask = {
+      id: taskId,
+      uploadId,
+      taskId,
+      filename: fileName,
+      fileSize: file.size,
+      progress: initialProgress,
+      abortController
+    };
+    
+    setUploadTasks(prev => [...prev, newTask]);
 
     // Store active upload task
     const activeUpload: ActiveUpload = {
@@ -118,22 +165,6 @@ export function useUploadManager({
     };
     activeUploads.set(uploadId, activeUpload);
 
-    // Set modal state
-    const initialProgress: UploadProgress = {
-      progress: 0,
-      bytes_transferred: 0,
-      total_bytes: file.size,
-      speed: '',
-      stage: 'init',
-      message: 'Preparing to upload...'
-    };
-    setUploadingFile({ name: fileName, size: file.size });
-    setUploadProgress(initialProgress);
-    setBackgroundUpload({ file: { name: fileName, size: file.size }, progress: initialProgress });
-    setShowUploadProgress(true);
-    setCurrentUploadId(uploadId);
-    setCurrentTaskId(taskId);
-
     // Create progress polling function
     const startProgressPolling = createProgressPolling({
       uploadId,
@@ -142,11 +173,12 @@ export function useUploadManager({
       filePath,
       fileSize: file.size,
       transfer,
-      setUploadProgress,
-      setBackgroundUpload,
-      setCurrentUploadId,
-      setCurrentTaskId,
-      abortController
+      setUploadProgress: (progress) => updateUploadTaskProgress(uploadId, progress),
+      setBackgroundUpload: () => {}, // Not used in multi-task mode
+      setCurrentUploadId: () => {}, // Not used in multi-task mode
+      setCurrentTaskId: () => {}, // Not used in multi-task mode
+      abortController,
+      directory: currentPath
     });
 
     let isCompleted = false;
@@ -179,10 +211,19 @@ export function useUploadManager({
 
       // Clean up
       activeUploads.delete(uploadId);
-      setCurrentUploadId(null);
-      setCurrentTaskId(null);
 
       if (response.success) {
+        // Update final progress
+        updateUploadTaskProgress(uploadId, {
+          progress: 100,
+          bytes_transferred: file.size,
+          stage: 'completed',
+          message: 'Upload complete'
+        });
+        
+        // Keep task in list for a while then remove
+        setTimeout(() => removeUploadTask(uploadId), 3000);
+        
         handleUploadComplete(
           true,
           fileName,
@@ -190,13 +231,22 @@ export function useUploadManager({
           file.size,
           taskId,
           transfer,
-          setUploadProgress,
-          setBackgroundUpload,
-          setCurrentUploadId,
-          setCurrentTaskId
+          () => {},
+          () => {},
+          () => {},
+          () => {},
+          undefined,
+          currentPath
         );
         return true;
       } else {
+        updateUploadTaskProgress(uploadId, {
+          stage: 'error',
+          message: response.message || 'Upload failed'
+        });
+        
+        setTimeout(() => removeUploadTask(uploadId), 5000);
+        
         handleUploadComplete(
           false,
           fileName,
@@ -204,11 +254,12 @@ export function useUploadManager({
           file.size,
           taskId,
           transfer,
-          setUploadProgress,
-          setBackgroundUpload,
-          setCurrentUploadId,
-          setCurrentTaskId,
-          response.message
+          () => {},
+          () => {},
+          () => {},
+          () => {},
+          response.message,
+          currentPath
         );
         return false;
       }
@@ -222,8 +273,6 @@ export function useUploadManager({
 
       // Clean up
       activeUploads.delete(uploadId);
-      setCurrentUploadId(null);
-      setCurrentTaskId(null);
 
       // If polling already handled completion, return immediately
       if (isCompleted) {
@@ -238,29 +287,40 @@ export function useUploadManager({
                           abortController.signal.aborted;
 
       if (isCancelled) {
-        handleUploadCancelled(
-          fileName,
-          file.size,
-          uploadProgress,
-          transfer,
-          setUploadProgress,
-          setBackgroundUpload,
-          setCurrentUploadId,
-          setCurrentTaskId
+        updateUploadTaskProgress(uploadId, {
+          stage: 'error',
+          message: 'Upload cancelled'
+        });
+        
+        setTimeout(() => removeUploadTask(uploadId), 3000);
+        
+        transfer.completeTransferTask(taskId, false, 'User cancelled');
+        transfer.addTransferLog(
+          'upload',
+          `✗ Upload cancelled: ${fileName}`,
+          'User cancelled the upload',
+          'info',
+          undefined,
+          currentPath
         );
         return false;
       }
 
-      // 检查是否是磁盘空间不足错误
+      // Check for disk space error
       const uploadError = err?.uploadError;
       if (uploadError?.disk_info) {
-        // 磁盘空间不足，显示专用对话框
         setDiskSpaceInfo(uploadError.disk_info);
         setDiskSpaceFileInfo(uploadError.file_info || null);
         setDiskSpaceErrorCode(uploadError.error_code || 'DISK_SPACE_INSUFFICIENT');
         setShowDiskSpaceError(true);
         
-        // 更新传输状态
+        updateUploadTaskProgress(uploadId, {
+          stage: 'error',
+          message: uploadError.error
+        });
+        
+        setTimeout(() => removeUploadTask(uploadId), 5000);
+        
         handleUploadComplete(
           false,
           fileName,
@@ -268,15 +328,23 @@ export function useUploadManager({
           file.size,
           taskId,
           transfer,
-          setUploadProgress,
-          setBackgroundUpload,
-          setCurrentUploadId,
-          setCurrentTaskId,
-          uploadError.error
+          () => {},
+          () => {},
+          () => {},
+          () => {},
+          uploadError.error,
+          currentPath
         );
         return false;
       }
 
+      updateUploadTaskProgress(uploadId, {
+        stage: 'error',
+        message: (err as Error).message
+      });
+      
+      setTimeout(() => removeUploadTask(uploadId), 5000);
+      
       handleUploadComplete(
         false,
         fileName,
@@ -284,55 +352,67 @@ export function useUploadManager({
         file.size,
         taskId,
         transfer,
-        setUploadProgress,
-        setBackgroundUpload,
-        setCurrentUploadId,
-        setCurrentTaskId,
-        (err as Error).message
+        () => {},
+        () => {},
+        () => {},
+        () => {},
+        (err as Error).message,
+        currentPath
       );
       return false;
     }
-  }, [hostId, currentPath, transfer, uploadProgress]);
+  }, [hostId, currentPath, transfer, updateUploadTaskProgress, removeUploadTask]);
 
   // Cancel upload
   const cancelUpload = useCallback((uploadId: string) => {
     cancelUploadById(uploadId);
-  }, []);
+    removeUploadTask(uploadId);
+  }, [removeUploadTask]);
 
   const handleUpload = () => fileInputRef.current?.click();
   const handleUploadFolder = () => folderInputRef.current?.click();
 
+  // Maximum concurrent uploads
+  const MAX_CONCURRENT_UPLOADS = 10;
+
+  // Handle file selection - supports concurrent uploads
   const handleUploadFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Debug: log all files with their relative paths
     console.log('[Upload] Files selected:', files.length);
-    for (let i = 0; i < files.length; i++) {
-      console.log(`[Upload] File ${i}:`, files[i].name, 'webkitRelativePath:', files[i].webkitRelativePath);
+
+    // Check if file count exceeds limit
+    if (files.length > MAX_CONCURRENT_UPLOADS) {
+      onError(
+        'Upload Limit Exceeded',
+        `You selected ${files.length} files. Maximum allowed is ${MAX_CONCURRENT_UPLOADS} files at a time. Please select fewer files.`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (folderInputRef.current) folderInputRef.current.value = '';
+      return;
     }
 
-    // Check if it's a folder upload (via webkitRelativePath)
+    // Check if it's a folder upload
     const isFolderUpload = files[0].webkitRelativePath && files[0].webkitRelativePath.includes('/');
 
     if (isFolderUpload) {
-      // Handle folder upload
       const rootFolderName = files[0].webkitRelativePath?.split('/')[0] || 'upload';
-      onSuccess('Upload Started', `Uploading folder "${rootFolderName}"...`, 3000);
+      onSuccess('Upload Started', `Uploading folder "${rootFolderName}" (${files.length} files)...`, 3000);
 
-      let successCount = 0;
-      let failCount = 0;
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const relativePath = file.webkitRelativePath;
-        if (!relativePath) continue;
-
-        console.log('[Upload] Uploading file with relativePath:', relativePath);
-        const result = await uploadFileWithProgress(file, relativePath);
-        if (result) successCount++;
-        else failCount++;
+      // Upload all files concurrently (max 10 at a time)
+      const results: boolean[] = [];
+      
+      for (let i = 0; i < files.length; i += MAX_CONCURRENT_UPLOADS) {
+        const batch = Array.from(files).slice(i, i + MAX_CONCURRENT_UPLOADS);
+        const batchResults = await Promise.all(
+          batch.map(file => uploadFileWithProgress(file, file.webkitRelativePath))
+        );
+        results.push(...batchResults);
       }
+
+      const successCount = results.filter(r => r).length;
+      const failCount = results.length - successCount;
 
       if (failCount === 0) {
         onSuccess('Upload Complete', `Folder "${rootFolderName}" uploaded (${successCount} files)`);
@@ -340,15 +420,26 @@ export function useUploadManager({
         onError('Partial Upload Failed', `${successCount} files uploaded, ${failCount} failed`);
       }
     } else {
-      // Handle regular file upload
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const result = await uploadFileWithProgress(file);
-        if (result) {
-          onSuccess('Upload Complete', `${file.name} uploaded successfully`);
-        } else {
-          onError('Upload Failed', `${file.name} upload failed`);
-        }
+      // Regular file upload - upload concurrently
+      onSuccess('Upload Started', `Uploading ${files.length} file(s)...`, 3000);
+      
+      const results: boolean[] = [];
+      
+      for (let i = 0; i < files.length; i += MAX_CONCURRENT_UPLOADS) {
+        const batch = Array.from(files).slice(i, i + MAX_CONCURRENT_UPLOADS);
+        const batchResults = await Promise.all(
+          batch.map(file => uploadFileWithProgress(file))
+        );
+        results.push(...batchResults);
+      }
+
+      const successCount = results.filter(r => r).length;
+      const failCount = results.length - successCount;
+
+      if (failCount === 0) {
+        onSuccess('Upload Complete', `${successCount} file(s) uploaded successfully`);
+      } else {
+        onError('Partial Upload Failed', `${successCount} files uploaded, ${failCount} failed`);
       }
     }
 
@@ -357,10 +448,10 @@ export function useUploadManager({
     if (folderInputRef.current) folderInputRef.current.value = '';
   }, [uploadFileWithProgress, onSuccess, onError, onRefresh]);
 
+  // Handle drag and drop upload - supports concurrent uploads
   const handleDropUpload = useCallback(async (items: DataTransferItemList) => {
     const entries: FileSystemEntry[] = [];
 
-    // Collect all entries
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       if (item.kind === 'file') {
@@ -373,7 +464,7 @@ export function useUploadManager({
 
     if (entries.length === 0) return;
 
-    // Collect all files (including files in directories)
+    // Collect all files
     const allFiles: { file: File; relativePath: string }[] = [];
     for (const entry of entries) {
       const files = await collectFiles(entry);
@@ -385,18 +476,30 @@ export function useUploadManager({
       return;
     }
 
-    // Show upload start notification
+    // Check if file count exceeds limit
+    if (allFiles.length > MAX_CONCURRENT_UPLOADS) {
+      onError(
+        'Upload Limit Exceeded',
+        `You selected ${allFiles.length} files. Maximum allowed is ${MAX_CONCURRENT_UPLOADS} files at a time. Please select fewer files.`
+      );
+      return;
+    }
+
     onSuccess('Upload Started', `Uploading ${allFiles.length} files...`, 3000);
 
-    let successCount = 0;
-    let failCount = 0;
-
-    // Upload all files (with real progress tracking)
-    for (const { file, relativePath } of allFiles) {
-      const result = await uploadFileWithProgress(file, relativePath);
-      if (result) successCount++;
-      else failCount++;
+    // Upload concurrently (max 10 at a time)
+    const results: boolean[] = [];
+    
+    for (let i = 0; i < allFiles.length; i += MAX_CONCURRENT_UPLOADS) {
+      const batch = allFiles.slice(i, i + MAX_CONCURRENT_UPLOADS);
+      const batchResults = await Promise.all(
+        batch.map(({ file, relativePath }) => uploadFileWithProgress(file, relativePath))
+      );
+      results.push(...batchResults);
     }
+
+    const successCount = results.filter(r => r).length;
+    const failCount = results.length - successCount;
 
     if (failCount === 0) {
       onSuccess('Upload Complete', `${successCount} files uploaded successfully`);
@@ -415,14 +518,11 @@ export function useUploadManager({
     handleUploadFileSelect,
     handleDropUpload,
     cancelUpload,
+    uploadTasks,
+    viewingTask,
     showUploadProgress,
-    uploadingFile,
-    uploadProgress,
-    backgroundUpload,
+    setViewingTask,
     setShowUploadProgress,
-    setBackgroundUpload,
-    currentUploadId,
-    currentTaskId,
     // Disk space error dialog
     showDiskSpaceError,
     diskSpaceInfo,
@@ -433,5 +533,5 @@ export function useUploadManager({
 }
 
 // Re-export for external use
-export { cancelUploadById, isUploadCancelled } from './uploadUtils';
+export { cancelUploadById } from './uploadUtils';
 export type { TransferManager } from '../types';

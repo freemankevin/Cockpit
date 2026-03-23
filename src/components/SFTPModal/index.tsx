@@ -16,8 +16,14 @@ import {
 import DownloadProgressDialog from '../sftp/DownloadProgressDialog';
 import DiskSpaceErrorDialog from '../sftp/DiskSpaceErrorDialog';
 
+// Extended props to include toast methods from parent
+interface SFTPModalExtendedProps extends SFTPModalProps {
+  onSuccess?: (title: string, message?: string, duration?: number) => string;
+  onError?: (title: string, message?: string, duration?: number) => string;
+}
+
 // Mac Terminal Style SFTP Modal
-const SFTPModal = ({ host, onClose, isMinimized: externalMinimized, onToggleMinimize }: SFTPModalProps) => {
+const SFTPModal = ({ host, onClose, isMinimized: externalMinimized, onToggleMinimize, onSuccess, onError }: SFTPModalExtendedProps) => {
   const {
     sftp, transfer, fileOps, window, upload, download,
     pathInputValue, setPathInputValue, isPathEditing, pathInputRef,
@@ -35,7 +41,9 @@ const SFTPModal = ({ host, onClose, isMinimized: externalMinimized, onToggleMini
   } = useSFTPModal({
     hostId: host.id,
     hostName: host.name,
-    hostAddress: host.address
+    hostAddress: host.address,
+    onSuccess,
+    onError
   });
 
   // Use external minimized state if provided, otherwise use internal state
@@ -185,35 +193,18 @@ const SFTPModal = ({ host, onClose, isMinimized: externalMinimized, onToggleMini
                     if (task) transfer.resumeTransferTask(taskId, task.size);
                   }}
                   onCancelTask={transfer.cancelTransferTask}
-                  onRestoreDownload={() => {
-                    if (download.backgroundDownload) {
-                      download.setShowDownloadProgress(true);
-                    }
+                  uploadTasks={upload.uploadTasks}
+                  onViewUploadTask={(task) => {
+                    upload.setViewingTask(task);
+                    upload.setShowUploadProgress(true);
                   }}
-                  onRestoreUpload={() => {
-                    if (upload.backgroundUpload) {
-                      upload.setShowUploadProgress(true);
-                    }
+                  onCancelUpload={upload.cancelUpload}
+                  downloadTasks={download.downloadTasks}
+                  onViewDownloadTask={(task) => {
+                    download.setViewingTask(task);
+                    download.setShowDownloadProgress(true);
                   }}
-                  hasBackgroundDownload={!!download.backgroundDownload && !download.showDownloadProgress &&
-                    (download.backgroundDownload.progress.stage === 'downloading' || download.backgroundDownload.progress.stage === 'init')}
-                  backgroundDownloadProgress={download.backgroundDownload?.progress.progress || 0}
-                  backgroundDownloadSpeed={download.backgroundDownload?.progress.speed || ''}
-                  backgroundDownloadFilename={download.backgroundDownload?.file.name || ''}
-                  backgroundDownloadFileSize={download.backgroundDownload?.file.size || 0}
-                  backgroundDownloadTransferred={download.backgroundDownload?.progress.bytes_transferred || 0}
-                  hasBackgroundUpload={!!upload.backgroundUpload && !upload.showUploadProgress &&
-                    (upload.backgroundUpload.progress.stage === 'uploading' || upload.backgroundUpload.progress.stage === 'init' || upload.backgroundUpload.progress.stage === 'receiving')}
-                  backgroundUploadProgress={upload.backgroundUpload?.progress.progress || 0}
-                  backgroundUploadSpeed={upload.backgroundUpload?.progress.speed || ''}
-                  backgroundUploadFilename={upload.backgroundUpload?.file.name || ''}
-                  backgroundUploadFileSize={upload.backgroundUpload?.file.size || 0}
-                  backgroundUploadTransferred={upload.backgroundUpload?.progress.bytes_transferred || 0}
-                  onCancelBackgroundUpload={() => {
-                    if (upload.currentUploadId) {
-                      upload.cancelUpload(upload.currentUploadId);
-                    }
-                  }}
+                  onCancelDownload={download.cancelDownload}
                 />
               )}
             </div>
@@ -275,39 +266,40 @@ const SFTPModal = ({ host, onClose, isMinimized: externalMinimized, onToggleMini
       
       {/* Download Progress Dialog */}
       <DownloadProgressDialog
-        isOpen={download.showDownloadProgress}
-        filename={download.downloadingFile?.name || ''}
-        fileSize={download.downloadingFile?.size || 0}
-        progress={download.downloadProgress}
+        isOpen={download.showDownloadProgress && !!download.viewingTask}
+        filename={download.viewingTask?.filename || ''}
+        fileSize={download.viewingTask?.fileSize || 0}
+        progress={download.viewingTask?.progress || { progress: 0, bytes_transferred: 0, total_bytes: 0, speed: '', stage: 'init', message: '' }}
         onClose={() => {
           download.setShowDownloadProgress(false);
-          download.setBackgroundDownload(null);
+          download.setViewingTask(null);
         }}
         onMinimize={() => {
           download.setShowDownloadProgress(false);
         }}
+        onCancel={download.viewingTask ? () => download.cancelDownload(download.viewingTask!.downloadId) : undefined}
       />
       
       {/* Upload Progress Dialog */}
       <UploadProgressDialog
-        isOpen={upload.showUploadProgress}
-        filename={upload.uploadingFile?.name || ''}
-        fileSize={upload.uploadingFile?.size || 0}
-        progress={upload.uploadProgress.progress}
-        bytesTransferred={upload.uploadProgress.bytes_transferred}
-        speed={upload.uploadProgress.speed}
-        stage={upload.uploadProgress.stage}
-        message={upload.uploadProgress.message}
+        isOpen={upload.showUploadProgress && !!upload.viewingTask}
+        filename={upload.viewingTask?.filename || ''}
+        fileSize={upload.viewingTask?.fileSize || 0}
+        progress={upload.viewingTask?.progress.progress || 0}
+        bytesTransferred={upload.viewingTask?.progress.bytes_transferred || 0}
+        speed={upload.viewingTask?.progress.speed || ''}
+        stage={upload.viewingTask?.progress.stage || 'init'}
+        message={upload.viewingTask?.progress.message || ''}
         onClose={() => {
           upload.setShowUploadProgress(false);
-          upload.setBackgroundUpload(null);
+          upload.setViewingTask(null);
         }}
         onMinimize={() => {
           upload.setShowUploadProgress(false);
         }}
         onCancel={() => {
-          if (upload.currentUploadId) {
-            upload.cancelUpload(upload.currentUploadId);
+          if (upload.viewingTask) {
+            upload.cancelUpload(upload.viewingTask.uploadId);
           }
         }}
       />

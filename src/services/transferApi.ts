@@ -7,6 +7,8 @@ export interface TransferRecord {
   type: 'upload' | 'download';
   filename: string;
   remote_path: string;
+  local_path?: string;
+  directory?: string;
   size: number;
   transferred: number;
   status: 'pending' | 'transferring' | 'completed' | 'failed' | 'cancelled' | 'paused';

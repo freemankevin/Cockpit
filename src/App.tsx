@@ -275,6 +275,8 @@ function App() {
           onClose={() => handleCloseWindow(window.id)}
           isMinimized={window.isMinimized}
           onToggleMinimize={() => handleToggleMinimize(window.id)}
+          onSuccess={success}
+          onError={error}
         />
       ))}
 

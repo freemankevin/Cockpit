@@ -122,6 +122,8 @@ type TransferRecord struct {
 	Type          string    `json:"type" gorm:"not null"`                        // upload, download
 	Filename      string    `json:"filename" gorm:"not null"`                    // 文件名
 	RemotePath    string    `json:"remote_path" gorm:"not null"`                 // 远程路径
+	LocalPath     string    `json:"local_path" gorm:"default:''"`                // 本地路径（用于文件夹上传）
+	Directory     string    `json:"directory" gorm:"default:''"`                 // 所在目录
 	Size          int64     `json:"size" gorm:"default:0"`                       // 文件大小
 	Transferred   int64     `json:"transferred" gorm:"default:0"`                // 已传输字节
 	Status        string    `json:"status" gorm:"not null"`                      // pending, transferring, completed, failed, cancelled

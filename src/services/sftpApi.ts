@@ -151,8 +151,12 @@ export const sftpApi = {
     // 如果有相对路径（文件夹上传），将其作为单独字段传递
     // 同时使用相对路径作为文件名，以便后端创建目录结构
     if (relativePath) {
+      // 对相对路径进行 UTF-8 编码，确保中文路径正确传输
       formData.append('relative_path', relativePath);
     }
+    
+    // 使用原始文件名，让后端处理编码问题
+    // FormData 会自动处理文件名的编码
     const fileName = relativePath || file.name;
     formData.append('file', file, fileName);
     

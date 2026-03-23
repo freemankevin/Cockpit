@@ -25,6 +25,7 @@ export interface TransferTask {
   filename: string;
   remotePath: string;
   localPath?: string;
+  directory?: string;    // 所在目录
   size: number;
   transferred: number;
   status: 'pending' | 'transferring' | 'completed' | 'failed' | 'paused' | 'cancelled';
@@ -34,6 +35,7 @@ export interface TransferTask {
   endTime?: Date;
   error?: string;
   uploadId?: string;  // 用于取消上传
+  downloadId?: string;  // 用于取消下载
 }
 
 // 传输日志条目
@@ -45,6 +47,20 @@ export interface TransferLog {
   path: string;
   size?: string;
   status: 'success' | 'error' | 'info';
+  directory?: string;  // 所在目录
+}
+
+// 后台任务接口
+export interface BackgroundTask {
+  type: 'upload' | 'download';
+  filename: string;
+  size: number;
+  progress: number;
+  speed: string;
+  transferred: number;
+  taskId: string;
+  progressId: string;
+  directory?: string;  // 所在目录
 }
 
 // 窗口状态
@@ -67,17 +83,20 @@ export type LogFilter = 'upload' | 'download';
 export interface TransferManager {
   transferTasks: TransferTask[];
   transferLogs: TransferLog[];
-  addTransferLog: (type: TransferLog['type'], message: string, path: string, status?: TransferLog['status'], size?: string) => void;
-  createTransferTask: (type: 'upload' | 'download', filename: string, remotePath: string, size: number) => Promise<string>;
+  addTransferLog: (type: TransferLog['type'], message: string, path: string, status?: TransferLog['status'], size?: string, directory?: string) => void;
+  createTransferTask: (type: 'upload' | 'download', filename: string, remotePath: string, size: number, directory?: string) => Promise<string>;
   updateTransferTask: (taskId: string, updates: Partial<TransferTask>) => void;
   completeTransferTask: (taskId: string, success: boolean, errorMsg?: string) => void;
   pauseTransferTask: (taskId: string) => void;
   resumeTransferTask: (taskId: string, fileSize: number) => void;
   cancelTransferTask: (taskId: string) => void;
+  cancelUploadById?: (uploadId: string) => void;
+  cancelDownloadById?: (downloadId: string) => void;
   simulateTransferProgress: (taskId: string, fileSize: number, onProgress?: (progress: number) => void) => (() => void);
   clearLogs: () => void;
   clearLogsByFilter: (filter: 'all' | 'upload' | 'download') => void;
   clearCompletedTasks: () => void;
+  loadTransferRecords: () => Promise<void>;
 }
 
 export { SFTPFile };

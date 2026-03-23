@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import type { SFTPFile } from '@/services/api';
-import { useToast } from '@/hooks/useToast';
 import { useDialog } from '@/components/Dialog';
 import type { LogFilter } from '../sftp/types';
 import {
@@ -12,10 +11,17 @@ import {
   useDownloadManager
 } from '../sftp';
 
+// Toast function types
+type ToastSuccess = (title: string, message?: string, duration?: number) => string;
+type ToastError = (title: string, message?: string, duration?: number) => string;
+
 interface UseSFTPModalProps {
   hostId: number;
   hostName: string;
   hostAddress: string;
+  // Toast methods passed from parent (App.tsx) for global toast display
+  onSuccess?: ToastSuccess;
+  onError?: ToastError;
 }
 
 interface UseSFTPModalReturn {
@@ -85,7 +91,7 @@ interface UseSFTPModalReturn {
   setShowFileEditor: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function useSFTPModal({ hostId, hostName, hostAddress }: UseSFTPModalProps): UseSFTPModalReturn {
+export function useSFTPModal({ hostId, hostName, hostAddress, onSuccess, onError }: UseSFTPModalProps): UseSFTPModalReturn {
   // UI State
   const [pathInputValue, setPathInputValue] = useState('/');
   const [isPathEditing, setIsPathEditing] = useState(false);
@@ -104,8 +110,12 @@ export function useSFTPModal({ hostId, hostName, hostAddress }: UseSFTPModalProp
   const [isDragOver, setIsDragOver] = useState(false);
   
   const pathInputRef = useRef<HTMLInputElement>(null);
-  const { success, error: showError } = useToast();
   const { showDialog, dialogComponent } = useDialog();
+  
+  // Default toast functions if not provided (fallback)
+  const defaultToast = (title: string, message?: string) => { console.log(`[Toast] ${title}: ${message}`); };
+  const success = onSuccess || defaultToast;
+  const showError = onError || defaultToast;
   
   // Custom hooks
   const transfer = useTransferManager();

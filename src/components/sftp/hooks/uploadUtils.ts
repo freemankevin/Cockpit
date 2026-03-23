@@ -80,6 +80,7 @@ export interface ProgressPollingOptions {
   setCurrentUploadId: (id: string | null) => void;
   setCurrentTaskId: (id: string | null) => void;
   abortController: AbortController;
+  directory?: string;
 }
 
 // Create progress polling function
@@ -95,8 +96,12 @@ export function createProgressPolling(options: ProgressPollingOptions): () => vo
     setBackgroundUpload,
     setCurrentUploadId,
     setCurrentTaskId,
-    abortController
+    abortController,
+    directory
   } = options;
+
+  // Extract directory from filePath if not provided
+  const dir = directory || filePath.substring(0, filePath.lastIndexOf('/')) || '/';
 
   let lastStage = '';
   let isCompleted = false;
@@ -182,7 +187,9 @@ export function createProgressPolling(options: ProgressPollingOptions): () => vo
                 'upload',
                 `Received, transferring to server...`,
                 filePath,
-                'info'
+                'info',
+                undefined,
+                dir
               );
             }
             lastStage = stage;
@@ -216,7 +223,8 @@ export function createProgressPolling(options: ProgressPollingOptions): () => vo
                 `✓ Upload success: ${fileName}`,
                 filePath,
                 'success',
-                formatFileSize(fileSize)
+                formatFileSize(fileSize),
+                dir
               );
               activeUploads.delete(uploadId);
               setCurrentUploadId(null);
@@ -241,7 +249,9 @@ export function createProgressPolling(options: ProgressPollingOptions): () => vo
                   'upload',
                   `✗ Upload cancelled: ${fileName}`,
                   message || 'User cancelled the upload',
-                  'info'
+                  'info',
+                  undefined,
+                  dir
                 );
               } else {
                 const errorProgress: UploadProgress = {
@@ -259,7 +269,9 @@ export function createProgressPolling(options: ProgressPollingOptions): () => vo
                   'error',
                   `✗ Upload failed: ${fileName}`,
                   message || 'Upload failed',
-                  'error'
+                  'error',
+                  undefined,
+                  dir
                 );
               }
               activeUploads.delete(uploadId);
@@ -375,8 +387,12 @@ export function handleUploadComplete(
   setBackgroundUpload: (upload: BackgroundUploadState | null) => void,
   setCurrentUploadId: (id: string | null) => void,
   setCurrentTaskId: (id: string | null) => void,
-  errorMessage?: string
+  errorMessage?: string,
+  directory?: string
 ): void {
+  // Extract directory from filePath if not provided
+  const dir = directory || filePath.substring(0, filePath.lastIndexOf('/')) || '/';
+  
   if (success) {
     const completedProgress: UploadProgress = {
       progress: 100,
@@ -399,7 +415,8 @@ export function handleUploadComplete(
       `✓ Upload success: ${fileName}`,
       filePath,
       'success',
-      formatFileSize(fileSize)
+      formatFileSize(fileSize),
+      dir
     );
   } else {
     const errorProgress: UploadProgress = {
@@ -417,7 +434,9 @@ export function handleUploadComplete(
       'error',
       `✗ Upload failed: ${fileName}`,
       errorMessage || 'Upload failed',
-      'error'
+      'error',
+      undefined,
+      dir
     );
   }
   setCurrentUploadId(null);

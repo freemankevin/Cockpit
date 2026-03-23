@@ -11,7 +11,7 @@ interface UploadProgressDialogProps {
   message: string;
   onClose: () => void;
   onMinimize: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
 }
 
 // 格式化文件大小

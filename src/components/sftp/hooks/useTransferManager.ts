@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { TransferTask, TransferLog } from '../types';
 import { generateId, formatFileSize } from '../utils';
-import { cancelUploadById } from './useUploadManager';
 import { transferApi } from '@/services/api';
 
 export const useTransferManager = (hostId?: number) => {
@@ -96,7 +95,7 @@ export const useTransferManager = (hostId?: number) => {
   }, [hostId]);
 
   // 添加传输日志
-  const addTransferLog = useCallback((type: TransferLog['type'], message: string, path: string, status: TransferLog['status'] = 'info', size?: string) => {
+  const addTransferLog = useCallback((type: TransferLog['type'], message: string, path: string, status: TransferLog['status'] = 'info', size?: string, directory?: string) => {
     const newLog: TransferLog = {
       id: generateId(),
       timestamp: new Date(),
@@ -104,13 +103,14 @@ export const useTransferManager = (hostId?: number) => {
       message,
       path,
       size,
-      status
+      status,
+      directory
     };
     setTransferLogs(prev => [newLog, ...prev].slice(0, 100));
   }, []);
 
   // 创建传输任务
-  const createTransferTask = useCallback(async (type: 'upload' | 'download', filename: string, remotePath: string, size: number): Promise<string> => {
+  const createTransferTask = useCallback(async (type: 'upload' | 'download', filename: string, remotePath: string, size: number, directory?: string): Promise<string> => {
     const taskId = generateId();
     const newTask: TransferTask = {
       id: taskId,
@@ -133,6 +133,8 @@ export const useTransferManager = (hostId?: number) => {
         type,
         filename,
         remote_path: remotePath,
+        local_path: '',
+        directory: directory || '',
         size,
         transferred: 0,
         status: 'pending',
@@ -167,10 +169,10 @@ export const useTransferManager = (hostId?: number) => {
       clearInterval(intervalId);
       progressIntervals.current.delete(taskId);
     }
-    
+
     const status: TransferTask['status'] = success ? 'completed' : 'failed';
     const now = new Date();
-    
+
     setTransferTasks(prev => prev.map(task => {
       if (task.id === taskId) {
         const updatedTask: TransferTask = {
@@ -178,16 +180,59 @@ export const useTransferManager = (hostId?: number) => {
           status,
           progress: success ? 100 : task.progress,
           endTime: now,
-          error: errorMsg
+          error: errorMsg,
+          uploadId: undefined  // 清除 uploadId
         };
-        
+
         // 保存到后端
         saveTransferRecord(updatedTask, status);
-        
+
         return updatedTask;
       }
       return task;
     }));
+  }, [saveTransferRecord]);
+
+  // 取消上传（由 useUploadManager 调用）
+  const cancelUploadById = useCallback((uploadId: string) => {
+    // 查找对应的传输任务并取消
+    setTransferTasks(prev => {
+      return prev.map(task => {
+        if (task.uploadId === uploadId) {
+          const updatedTask = {
+            ...task,
+            status: 'cancelled' as const,
+            endTime: new Date(),
+            error: 'User cancelled',
+            uploadId: undefined  // 清除 uploadId
+          };
+          saveTransferRecord(updatedTask, 'cancelled');
+          return updatedTask;
+        }
+        return task;
+      });
+    });
+  }, [saveTransferRecord]);
+
+  // 取消下载（由 useDownloadManager 调用）
+  const cancelDownloadById = useCallback((downloadId: string) => {
+    // 查找对应的传输任务并取消
+    setTransferTasks(prev => {
+      return prev.map(task => {
+        if (task.downloadId === downloadId) {
+          const updatedTask = {
+            ...task,
+            status: 'cancelled' as const,
+            endTime: new Date(),
+            error: 'User cancelled',
+            downloadId: undefined  // 清除 downloadId
+          };
+          saveTransferRecord(updatedTask, 'cancelled');
+          return updatedTask;
+        }
+        return task;
+      });
+    });
   }, [saveTransferRecord]);
 
   // 取消传输任务
@@ -201,15 +246,8 @@ export const useTransferManager = (hostId?: number) => {
     
     const now = new Date();
     
-    // 查找任务以获取 uploadId
+    // 更新任务状态为已取消
     setTransferTasks(prev => {
-      const task = prev.find(t => t.id === taskId);
-      if (task?.uploadId) {
-        // 如果是上传任务，调用取消上传
-        cancelUploadById(task.uploadId);
-      }
-      
-      // 更新任务状态为已取消
       return prev.map(t => {
         if (t.id === taskId) {
           const updatedTask = { 
@@ -397,6 +435,8 @@ export const useTransferManager = (hostId?: number) => {
     pauseTransferTask,
     resumeTransferTask,
     cancelTransferTask,
+    cancelUploadById,
+    cancelDownloadById,
     simulateTransferProgress,
     clearLogs,
     clearLogsByFilter,

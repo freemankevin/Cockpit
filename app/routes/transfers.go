@@ -65,6 +65,8 @@ func updateTransferRecord(c *gin.Context) {
 		Type        string     `json:"type"`
 		Filename    string     `json:"filename"`
 		RemotePath  string     `json:"remote_path"`
+		LocalPath   string     `json:"local_path"`
+		Directory   string     `json:"directory"`
 		Size        int64      `json:"size"`
 		Transferred int64      `json:"transferred"`
 		Status      string     `json:"status"`
@@ -99,6 +101,12 @@ func updateTransferRecord(c *gin.Context) {
 	}
 	if input.RemotePath != "" {
 		record.RemotePath = input.RemotePath
+	}
+	if input.LocalPath != "" {
+		record.LocalPath = input.LocalPath
+	}
+	if input.Directory != "" {
+		record.Directory = input.Directory
 	}
 	if input.Size > 0 {
 		record.Size = input.Size

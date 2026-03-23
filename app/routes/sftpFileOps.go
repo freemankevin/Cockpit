@@ -1,16 +1,22 @@
 package routes
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"deploy-master/pkg/logger"
 	"deploy-master/services"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 // sftpDownload 下载文件
@@ -23,6 +29,14 @@ func sftpDownload(c *gin.Context) {
 	
 	// 先从 query 参数获取 download_id（优先），这样可以在解析 JSON 之前就创建进度记录
 	downloadID := c.Query("download_id")
+	
+	// 检查客户端是否已取消下载
+	if c.Request.Context().Err() != nil {
+		if downloadID != "" {
+			services.UpdateProgress(downloadID, "cancelled", 0, 0, 0, "Download cancelled by user")
+		}
+		return
+	}
 	
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -51,23 +65,35 @@ func sftpDownload(c *gin.Context) {
 
 	// 获取文件名
 	filename := input.Path
+	directory := ""
 	if idx := len(input.Path) - 1; idx > 0 {
 		for i := len(input.Path) - 1; i >= 0; i-- {
 			if input.Path[i] == '/' {
 				filename = input.Path[i+1:]
+				directory = input.Path[:i]
+				if directory == "" {
+					directory = "/"
+				}
 				break
 			}
 		}
 	}
 
-	// 设置响应头 - 使用 RFC 5987 编码文件名，支持特殊字符和空格
+	// 设置响应头 - 使用 RFC 5987 编码文件名，支持特殊字符和中文
 	encodedFilename := url.QueryEscape(filename)
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s", filename, encodedFilename))
-	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Type", "application/octet-stream; charset=utf-8")
 
 	// 流式下载
 	err = service.DownloadFile(input.Path, c.Writer, downloadID)
 	if err != nil {
+		// 检查是否是客户端取消导致的错误
+		if c.Request.Context().Err() != nil {
+			if downloadID != "" {
+				services.UpdateProgress(downloadID, "cancelled", 0, 0, 0, "Download cancelled by user")
+			}
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -132,6 +158,10 @@ func sftpUpload(c *gin.Context) {
 
 	logger.SFTP.Debug("[Upload] %s received file: %s, size: %d", progressID, header.Filename, header.Size)
 
+	// 解码文件名（处理中文文件名编码问题）
+	decodedFilename := decodeMultipartFilename(header)
+	logger.SFTP.Debug("[Upload] %s decoded filename: '%s' (original: '%s')", progressID, decodedFilename, header.Filename)
+
 	// 再次检查客户端是否已断开连接
 	if c.Request.Context().Err() != nil {
 		logger.SFTP.Debug("[Upload] %s cancelled by client before SFTP transfer", progressID)
@@ -150,12 +180,12 @@ func sftpUpload(c *gin.Context) {
 	}
 
 	// 构建远程文件路径
-	// 优先使用 relativePath（文件夹上传时传递），否则使用 header.Filename
-	fileName := relativePath
-	if fileName == "" {
-		fileName = header.Filename
-	}
-	remotePath := path + "/" + fileName
+	// 优先使用 relativePath（文件夹上传时传递），否则使用解码后的文件名
+ 	fileName := relativePath
+ 	if fileName == "" {
+		fileName = decodedFilename
+ 	}
+ 	remotePath := path + "/" + fileName
 	
 	// Debug: 输出文件名信息，帮助排查问题
 	logger.SFTP.Debug("[Upload] %s fileName='%s', header.Filename='%s', contains '/': %v", progressID, fileName, header.Filename, strings.Contains(fileName, "/"))
@@ -264,7 +294,7 @@ func sftpUpload(c *gin.Context) {
 		// 检查是否是客户端取消导致的错误
 		if c.Request.Context().Err() != nil {
 			logger.SFTP.Debug("[Upload] %s cancelled by client during transfer", progressID)
-			services.UpdateProgress(progressID, "error", 0, 0, 0, "Upload cancelled by user")
+			services.UpdateProgress(progressID, "cancelled", 0, 0, 0, "Upload cancelled by user")
 			return
 		}
 		logger.SFTP.Error("[Upload] %s transfer failed: %v", progressID, err)
@@ -273,11 +303,15 @@ func sftpUpload(c *gin.Context) {
 		return
 	}
 
-	logger.SFTP.Info("[Upload] %s completed: %s -> %s (%d bytes)", progressID, header.Filename, remotePath, header.Size)
+	logger.SFTP.Info("[Upload] %s completed: %s -> %s (%d bytes)", progressID, decodedFilename, remotePath, header.Size)
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
 		"message":     "Upload completed",
 		"progress_id": progressID,
+		"filename":    decodedFilename,
+		"remote_path": remotePath,
+		"directory":   path,
+		"size":        header.Size,
 	})
 }
 
@@ -467,4 +501,69 @@ func formatSize(bytes int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// decodeMultipartFilename 解码 multipart 表单中的文件名
+// 浏览器可能以不同编码发送文件名，此函数尝试正确解码中文文件名
+func decodeMultipartFilename(header *multipart.FileHeader) string {
+	filename := header.Filename
+	
+	// 如果文件名已经是有效的 UTF-8，直接返回
+	if isValidUTF8(filename) {
+		return filename
+	}
+	
+	// 尝试从 Content-Disposition 头中获取原始文件名
+	cd := header.Header.Get("Content-Disposition")
+	if cd != "" {
+		// 尝试提取 filename*=UTF-8''encoded 格式的文件名
+		if idx := strings.Index(cd, "filename*=UTF-8''"); idx != -1 {
+			encoded := cd[idx+18:]
+			if endIdx := strings.Index(encoded, ";"); endIdx != -1 {
+				encoded = encoded[:endIdx]
+			}
+			if decoded, err := url.QueryUnescape(encoded); err == nil {
+				return decoded
+			}
+		}
+	}
+	
+	// 尝试 ISO-8859-1 到 UTF-8 的转换（常见于某些浏览器）
+	// ISO-8859-1 的每个字节直接转换为 UTF-8 的对应码点
+	iso8859Bytes := make([]byte, len(filename))
+	for i, r := range filename {
+		if r < 256 {
+			iso8859Bytes[i] = byte(r)
+		} else {
+			iso8859Bytes[i] = '?'
+		}
+	}
+	
+	// 尝试将 ISO-8859-1 字节解释为 GBK（常见于中文 Windows）
+	if decoded, err := decodeGBK(iso8859Bytes); err == nil && isValidUTF8(decoded) {
+		return decoded
+	}
+	
+	// 返回原始文件名
+	return filename
+}
+
+// isValidUTF8 检查字符串是否是有效的 UTF-8
+func isValidUTF8(s string) bool {
+	for _, r := range s {
+		if r == utf8.RuneError {
+			return false
+		}
+	}
+	return true
+}
+
+// decodeGBK 将 GBK 字节解码为 UTF-8 字符串
+func decodeGBK(data []byte) (string, error) {
+	reader := transform.NewReader(bytes.NewReader(data), simplifiedchinese.GBK.NewDecoder())
+	decoded, err := io.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	return string(decoded), nil
 }
