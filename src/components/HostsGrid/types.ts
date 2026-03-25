@@ -16,6 +16,21 @@ export interface HostsGridProps {
   onRefresh?: () => void;
 }
 
+export interface ColumnWidths {
+  checkbox: number;
+  id: number;
+  hostName: number;
+  status: number;
+  specs: number;
+  swap: number;
+  arch: number;
+  kernel: number;
+  os: number;
+  ip: number;
+  disk: number;
+  actions: number;
+}
+
 export interface HostListItemProps {
   host: SSHHost;
   isExpanded: boolean;
@@ -23,6 +38,7 @@ export interface HostListItemProps {
   isRefreshing: boolean;
   copiedField: string | null;
   isSelected: boolean;
+  columnWidths?: ColumnWidths;
   onToggleExpand: () => void;
   onToggleMenu: () => void;
   onCloseMenu: () => void;

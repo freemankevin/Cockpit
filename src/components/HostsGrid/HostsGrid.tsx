@@ -6,7 +6,24 @@ import BatchConfirmDialog from './BatchConfirmDialog';
 import Pagination from './Pagination';
 import FilterDropdown from './FilterDropdown';
 import { useHostsGrid } from './useHostsGrid';
+import { useColumnResize } from '@/hooks/useColumnResize';
 import type { HostsGridProps } from './types';
+
+// Default column widths
+const defaultColumnWidths = {
+  checkbox: 36,
+  id: 140,
+  hostName: 160,
+  status: 80,
+  specs: 100,
+  swap: 60,
+  arch: 70,
+  kernel: 200,
+  os: 80,
+  ip: 140,
+  disk: 180,
+  actions: 180,
+};
 
 const HostsGrid = ({
   hosts,
@@ -20,6 +37,12 @@ const HostsGrid = ({
   onCopyHost,
   onRefresh
 }: HostsGridProps) => {
+  // Column resize hook
+  const { widths: colWidths, getResizeHandleProps, getResizeIndicatorProps } = useColumnResize({
+    initialWidths: defaultColumnWidths,
+    minWidth: 50,
+  });
+
   const {
     currentPage,
     pageSize,
@@ -186,55 +209,90 @@ const HostsGrid = ({
       {/* List view - Dark Mode with horizontal scroll */}
       <div className="bg-background-secondary rounded-lg border border-border-primary overflow-hidden">
         <div className="overflow-x-auto">
-          {/* Table header */}
-          <div className="flex bg-background-tertiary border-b border-border-primary text-xs min-w-[850px]">
+          {/* Table header with resize handles */}
+          <div className="flex bg-background-tertiary border-b border-border-primary text-xs" style={{ minWidth: Object.values(colWidths).reduce((a, b) => a + b, 0) }}>
           {/* Checkbox */}
-          <div className="w-9 pl-3 pr-2 py-2.5 flex items-center justify-center shrink-0">
-            <Checkbox checked={isAllSelected} onChange={handleSelectAll} />
+          <div className="relative flex items-center justify-center shrink-0" style={{ width: colWidths.checkbox }}>
+            <div className="flex-1 pl-3 pr-2 py-2.5 flex items-center justify-center">
+              <Checkbox checked={isAllSelected} onChange={handleSelectAll} />
+            </div>
+            <div {...getResizeHandleProps('checkbox')}><div {...getResizeIndicatorProps('checkbox')} /></div>
           </div>
           {/* ID */}
-          <div className="w-32 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <span className="font-semibold text-text-secondary">ID</span>
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.id }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <span className="font-semibold text-text-secondary">ID</span>
+            </div>
+            <div {...getResizeHandleProps('id')}><div {...getResizeIndicatorProps('id')} /></div>
           </div>
           {/* Host Name */}
-          <div className="w-40 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <span className="font-semibold text-text-secondary">Host Name</span>
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.hostName }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <span className="font-semibold text-text-secondary">Host Name</span>
+            </div>
+            <div {...getResizeHandleProps('hostName')}><div {...getResizeIndicatorProps('hostName')} /></div>
           </div>
           {/* Status */}
-          <div className="w-20 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <FilterDropdown column="Status" options={statusOptions} selectedValues={statusFilter} onChange={setStatusFilter} />
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.status }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <FilterDropdown column="Status" options={statusOptions} selectedValues={statusFilter} onChange={setStatusFilter} />
+            </div>
+            <div {...getResizeHandleProps('status')}><div {...getResizeIndicatorProps('status')} /></div>
           </div>
           {/* Specs */}
-          <div className="w-24 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <span className="font-semibold text-text-secondary">Specs</span>
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.specs }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <span className="font-semibold text-text-secondary">Specs</span>
+            </div>
+            <div {...getResizeHandleProps('specs')}><div {...getResizeIndicatorProps('specs')} /></div>
           </div>
           {/* Swap */}
-          <div className="w-16 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <span className="font-semibold text-text-secondary">Swap</span>
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.swap }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <span className="font-semibold text-text-secondary">Swap</span>
+            </div>
+            <div {...getResizeHandleProps('swap')}><div {...getResizeIndicatorProps('swap')} /></div>
           </div>
           {/* Arch */}
-          <div className="w-16 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <FilterDropdown column="Arch" options={archOptions} selectedValues={archFilter} onChange={setArchFilter} />
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.arch }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <FilterDropdown column="Arch" options={archOptions} selectedValues={archFilter} onChange={setArchFilter} />
+            </div>
+            <div {...getResizeHandleProps('arch')}><div {...getResizeIndicatorProps('arch')} /></div>
           </div>
           {/* Kernel */}
-          <div className="w-52 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <span className="font-semibold text-text-secondary">Kernel</span>
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.kernel }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <span className="font-semibold text-text-secondary">Kernel</span>
+            </div>
+            <div {...getResizeHandleProps('kernel')}><div {...getResizeIndicatorProps('kernel')} /></div>
           </div>
           {/* OS */}
-          <div className="w-24 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <FilterDropdown column="OS" options={osOptions} selectedValues={osFilter} onChange={setOsFilter} />
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.os }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <FilterDropdown column="OS" options={osOptions} selectedValues={osFilter} onChange={setOsFilter} />
+            </div>
+            <div {...getResizeHandleProps('os')}><div {...getResizeIndicatorProps('os')} /></div>
           </div>
           {/* IPv4 Address */}
-          <div className="w-40 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <span className="font-semibold text-text-secondary">IP</span>
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.ip }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <span className="font-semibold text-text-secondary">IP</span>
+            </div>
+            <div {...getResizeHandleProps('ip')}><div {...getResizeIndicatorProps('ip')} /></div>
           </div>
           {/* Disk */}
-          <div className="w-48 px-2 py-2.5 flex items-center justify-start shrink-0">
-            <span className="font-semibold text-text-secondary">Disk</span>
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.disk }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <span className="font-semibold text-text-secondary">Disk</span>
+            </div>
+            <div {...getResizeHandleProps('disk')}><div {...getResizeIndicatorProps('disk')} /></div>
           </div>
-          {/* Actions */}
-          <div className="px-2 py-2.5 flex items-center justify-start shrink-0 min-w-[110px]">
-            <span className="font-semibold text-text-secondary">Actions</span>
+          {/* Actions - no resize handle for last column */}
+          <div className="relative flex items-center shrink-0" style={{ width: colWidths.actions }}>
+            <div className="flex-1 px-2 py-2.5 flex items-center">
+              <span className="font-semibold text-text-secondary">Actions</span>
+            </div>
           </div>
         </div>
 
@@ -249,6 +307,7 @@ const HostsGrid = ({
               isRefreshing={refreshingHostId === host.id}
               copiedField={copiedField}
               isSelected={selectedHosts.has(host.id)}
+              columnWidths={colWidths}
               onToggleExpand={() => setExpandedHost(expandedHost === host.id ? null : host.id)}
               onToggleMenu={() => setActiveMenu(activeMenu === host.id ? null : host.id)}
               onCloseMenu={handleClickOutside}
