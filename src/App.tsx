@@ -209,15 +209,15 @@ function App() {
   const activeWindows = openWindows.filter(w => !w.isMinimized);
 
   return (
-    <div className="bg-background-primary text-white h-screen overflow-hidden flex m-0 p-0">
+    <div className="bg-background-primary text-text-primary h-screen overflow-hidden flex m-0 p-0">
       {/* Sidebar */}
       <Sidebar hostCount={hosts.length} />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col bg-background-primary relative">
-        {/* Background Pattern - Dark Mode */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px]" />
+        {/* Background Pattern - Subtle grid */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:24px_24px]" />
         </div>
         
         {/* Header */}
@@ -256,8 +256,8 @@ function App() {
         />
       )}
 
-      {/* Active Terminal Windows */}
-      {activeWindows.filter(w => w.type === 'terminal').map(window => (
+      {/* Terminal Windows - always render to keep connection alive */}
+      {openWindows.filter(w => w.type === 'terminal').map(window => (
         <TerminalModal
           key={window.id}
           host={window.host}
@@ -267,8 +267,8 @@ function App() {
         />
       ))}
 
-      {/* Active SFTP Windows */}
-      {activeWindows.filter(w => w.type === 'sftp').map(window => (
+      {/* SFTP Windows - always render to keep connection alive */}
+      {openWindows.filter(w => w.type === 'sftp').map(window => (
         <SFTPModal
           key={window.id}
           host={window.host}

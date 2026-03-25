@@ -111,6 +111,21 @@ const TerminalModal = ({ host, onClose, isMinimized: externalMinimized, onToggle
     }
   };
 
+  // Re-fit terminal when restoring from minimized state
+  useEffect(() => {
+    if (!isMinimized && connected) {
+      // Delay to allow DOM to update
+      const timer = setTimeout(() => {
+        fitTerminal();
+        // Force xterm to refresh its display
+        if (xtermRef.current) {
+          xtermRef.current.refresh(0, xtermRef.current.rows - 1);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isMinimized, connected, fitTerminal, xtermRef]);
+
   const handleTerminalClick = () => {
     if (xtermRef.current) {
       xtermRef.current.focus();
@@ -119,18 +134,19 @@ const TerminalModal = ({ host, onClose, isMinimized: externalMinimized, onToggle
 
   return (
     <>
-      {/* Terminal main window - only render if not minimized */}
-      {!isMinimized && (
-        <div
-          className={`fixed inset-0 z-50 transition-all duration-300 flex items-center justify-center animate-fade-in opacity-100`}
-          style={{
-            background: 'rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          }}>
-          <div className={`relative flex flex-col overflow-hidden animate-scale-in transition-all duration-300 ${
-            isFullscreen ? 'fixed inset-4 w-auto h-auto max-w-none rounded-2xl' : 'w-full max-w-4xl h-[600px] rounded-xl'
-          }`}
+      {/* Terminal main window - always render but hide when minimized */}
+      <div
+        className={`fixed inset-0 z-50 transition-all duration-300 flex items-center justify-center ${
+          isMinimized ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+        style={{
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        }}>
+        <div className={`relative flex flex-col overflow-hidden transition-all duration-300 ${
+          isFullscreen ? 'w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] max-w-none rounded-2xl' : 'w-full max-w-4xl h-[600px] rounded-xl'
+        }`}
             style={{
               background: 'linear-gradient(180deg, rgba(58,58,60,0.95) 0%, rgba(44,44,46,0.98) 100%)',
               WebkitBackdropFilter: 'blur(40px) saturate(180%)',
@@ -268,7 +284,6 @@ const TerminalModal = ({ host, onClose, isMinimized: externalMinimized, onToggle
             </div>
           </div>
         </div>
-      )}
     </>
   );
 };

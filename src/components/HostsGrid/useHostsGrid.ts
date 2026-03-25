@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { SSHHost } from '@/types';
 import { hostApi } from '@/services/api';
+import { getOSLabel } from '@/components/OSIcon';
 import type { BatchDialogState, UseHostsGridProps, UseHostsGridReturn } from './types';
 
 export function useHostsGrid({ hosts, onRefresh }: UseHostsGridProps): UseHostsGridReturn {
@@ -49,12 +50,16 @@ export function useHostsGrid({ hosts, onRefresh }: UseHostsGridProps): UseHostsG
   }, [hosts]);
   
   const osOptions = useMemo(() => {
-    const oss = new Set<string>();
+    const oss = new Map<string, string>(); // key: original value, value: display label
     hosts.forEach(h => {
-      if (h.system_type) oss.add(h.system_type);
-      else if (h.os_key) oss.add(h.os_key);
+      const key = h.system_type || h.os_key || '';
+      if (key) {
+        const label = getOSLabel(h.os_key, h.system_type);
+        oss.set(key, label);
+      }
     });
-    return Array.from(oss);
+    // Return unique labels
+    return Array.from(new Set(oss.values())).sort();
   }, [hosts]);
   
   const archOptions = useMemo(() => {
@@ -260,19 +265,60 @@ export function useHostsGrid({ hosts, onRefresh }: UseHostsGridProps): UseHostsG
   
   // Export
   const handleExport = useCallback(() => {
-    const headers = ['ID', 'Name', 'Address', 'Port', 'Username', 'Auth Type', 'Status', 'OS', 'CPU Cores', 'Memory(GB)', 'Description'];
+    // Helper function to format memory (same as frontend display)
+    const formatMemory = (memoryGb?: number): string => {
+      if (!memoryGb) return '';
+      if (memoryGb >= 1024) {
+        return `${(memoryGb / 1024).toFixed(1)}T`;
+      }
+      return `${memoryGb}G`;
+    };
+
+    // Helper function to format disk info: physical_disk-mount_point-total(usage%)
+    const formatDiskInfo = (disks?: { device: string; physical_disk?: string; mount_point: string; total: number; usage: number }[]): string => {
+      if (!disks || disks.length === 0) return '';
+      return disks.map(d => {
+        const physicalDisk = d.physical_disk || d.device || '';
+        const totalGB = (d.total / (1024 * 1024 * 1024)).toFixed(0);
+        return `${physicalDisk}-${d.mount_point}-${totalGB}G(${d.usage.toFixed(0)}%)`;
+      }).join('; ');
+    };
+
+    const headers = [
+      'Host ID',
+      'Hostname', 
+      'Address', 
+      'Port', 
+      'Username', 
+      'Auth Type',
+      'Password',
+      'Status',
+      'OS',
+      'Architecture',
+      'Kernel',
+      'CPU Cores',
+      'Memory',
+      'Swap',
+      'Disks',
+      'Description'
+    ];
+    
     const rows = filteredHosts.map(host => [
-      host.id,
-      host.name,
-      host.address,
-      host.port,
-      host.username,
-      host.auth_type === 'password' ? 'Password' : 'Key',
-      host.status === 'connected' ? 'Running' : host.status === 'disconnected' ? 'Offline' : 'Unknown',
-      // Prefer os_pretty_name for complete version info (e.g., "Ubuntu 22.04.5 LTS")
-      host.os_pretty_name || host.system_type || host.os_key || 'Unknown',
-      host.cpu_cores || '',
-      host.memory_gb || '',
+      host.host_id || '',
+      host.name || '',
+      host.address || '',
+      String(host.port || 22),
+      host.username || '',
+      host.auth_type === 'password' ? 'Password' : 'SSH Key',
+      '', // Password column - always empty for security (whether password or key auth)
+      host.status === 'connected' ? 'Online' : host.status === 'disconnected' ? 'Offline' : 'Warning',
+      host.os_pretty_name || host.system_type || host.os_key || '',
+      host.architecture || '',
+      host.kernel_version || '',
+      String(host.cpu_cores || ''),
+      formatMemory(host.memory_gb) || '0',
+      formatMemory(host.swap_gb) || '0',
+      formatDiskInfo(host.disks),
       host.description || ''
     ]);
     
@@ -284,7 +330,7 @@ export function useHostsGrid({ hosts, onRefresh }: UseHostsGridProps): UseHostsG
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Host List_${new Date().toLocaleDateString()}.csv`;
+    link.download = `Hosts_Export_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   }, [filteredHosts]);
   

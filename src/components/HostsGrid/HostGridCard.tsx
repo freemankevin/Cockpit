@@ -73,8 +73,8 @@ export const HostGridCard = ({
 
   return (
     <div
-      className="bg-background-secondary rounded-lg border border-border-primary p-4
-               hover:border-macos-gray-2 hover:shadow-macos-card transition-all"
+      className="bg-background-secondary/90 rounded-lg border border-border-primary p-4
+               hover:border-border-tertiary hover:shadow-macos-card-hover transition-all duration-300"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
@@ -86,7 +86,7 @@ export const HostGridCard = ({
             title={host.os_pretty_name || `${getOSLabel(host.os_key, host.system_type)}${host.os_version ? ` (${host.os_version})` : ''}`}
           />
           <div>
-            <h3 className="font-medium text-sm text-white">{host.name || host.address}</h3>
+            <h3 className="font-medium text-sm text-text-primary">{host.name || host.address}</h3>
             <div className="flex items-center gap-1 mt-0.5">
               <span className="text-xs text-text-secondary">{host.address}</span>
               <StatusBadge status={host.status} />
@@ -116,7 +116,7 @@ export const HostGridCard = ({
         <div className="mb-3">
           {/* Main disk info - clickable if multiple disks */}
           <div
-            className={`p-2 bg-background-tertiary rounded-lg ${hasMultipleDisks ? 'cursor-pointer hover:bg-background-elevated' : ''}`}
+            className={`p-2.5 bg-background-tertiary/80 rounded-lg border border-border-secondary ${hasMultipleDisks ? 'cursor-pointer hover:bg-background-hover hover:border-border-tertiary' : ''}`}
             onClick={() => hasMultipleDisks && setIsExpanded(!isExpanded)}
           >
             <div className="flex items-center justify-between mb-1">
@@ -150,7 +150,7 @@ export const HostGridCard = ({
                     e.stopPropagation();
                     setIsExpanded(false);
                   }}
-                  className="text-xs text-text-tertiary hover:text-white"
+                  className="text-xs text-text-tertiary hover:text-text-primary"
                 >
                   <i className="fa-solid fa-chevron-up"></i>
                 </button>
@@ -167,20 +167,21 @@ export const HostGridCard = ({
       <div className="flex gap-2">
         <button
           onClick={onOpenTerminal}
-          className="flex-1 py-1.5 bg-macos-blue hover:brightness-110 text-white
-                   rounded text-xs font-medium transition-all
-                   flex items-center justify-center gap-1
-                   shadow-macos-button active:scale-[0.98]"
+          className="flex-1 py-2 bg-macos-blue hover:brightness-110 text-white
+                   rounded-md text-xs font-medium transition-all duration-200
+                   flex items-center justify-center gap-1.5
+                   shadow-macos-button hover:shadow-glow-blue
+                   active:scale-[0.98]"
         >
-          <i className="fa-solid fa-terminal w-3.5 h-3.5 text-white"></i>
+          <i className="fa-solid fa-terminal w-3.5 h-3.5"></i>
           Terminal
         </button>
         <button
           onClick={onOpenSFTP}
-          className="flex-1 py-1.5 bg-background-tertiary hover:bg-background-elevated text-white
-                   rounded text-xs font-medium transition-colors
-                   flex items-center justify-center gap-1
-                   border border-border-primary"
+          className="flex-1 py-2 bg-background-tertiary hover:bg-background-hover text-text-primary
+                   rounded-md text-xs font-medium transition-all duration-200
+                   flex items-center justify-center gap-1.5
+                   border border-border-primary hover:border-border-tertiary"
         >
           <i className="fa-solid fa-folder-open w-3.5 h-3.5 text-macos-green"></i>
           SFTP

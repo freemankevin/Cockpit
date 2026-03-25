@@ -101,18 +101,18 @@ const HostsGrid = ({
       {/* Operation bar - macOS Dark Mode style */}
       <div className="flex items-center gap-3">
         {/* Left side: operation button group */}
-        <div className="flex items-center gap-2 mr-auto">
-          {/* Add host button - compact size */}
+        <div className="flex items-center gap-2">
+          {/* Add host button */}
           <button
             onClick={onAddHost}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-macos-blue text-white
-                     rounded-md text-xs font-medium
+            className="flex items-center gap-1.5 px-3 py-2 bg-macos-blue text-white
+                     rounded-md text-xs font-medium h-[34px]
                      transition-all duration-200 ease-macos
                      shadow-macos-button
                      hover:brightness-110 hover:shadow-glow-blue
                      active:shadow-macos-button-active active:scale-[0.97]"
           >
-            <i className="fa-solid fa-plus text-[11px] text-white"></i>
+            <i className="fa-solid fa-plus text-[11px]"></i>
             <span>Add Host</span>
           </button>
 
@@ -128,114 +128,113 @@ const HostsGrid = ({
           />
         </div>
 
-        {/* Search box - compact size matching More Actions */}
-        <div className="relative">
-          <i className="fa-solid fa-search text-[13px] absolute left-2.5 top-1/2 -translate-y-1/2 text-macos-blue"></i>
-          <input
-            type="text"
-            placeholder="Search hosts..."
-            className="w-[200px] pl-7 pr-3 py-1.5 bg-background-tertiary border border-border-primary
-                     rounded-md text-xs text-white placeholder-text-tertiary
-                     transition-all duration-200 ease-macos
-                     shadow-macos-input
-                     focus:outline-none focus:border-macos-blue focus:shadow-macos-input-focus
-                     hover:border-macos-gray-2"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        {/* Spacer */}
+        <div className="flex-1"></div>
+
+        {/* Right side: Search + Tools */}
+        <div className="flex items-center gap-2">
+          {/* Search box */}
+          <div className="relative">
+            <i className="fa-solid fa-search text-[12px] absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"></i>
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-[140px] lg:w-[180px] pl-7 pr-2 py-2 bg-background-tertiary/80 border border-border-primary
+                       rounded-md text-xs text-text-primary placeholder-text-tertiary h-[34px]
+                       transition-all duration-200 ease-macos
+                       shadow-macos-input
+                       focus:outline-none focus:border-macos-blue focus:shadow-macos-input-focus
+                       hover:border-border-tertiary"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
+          </div>
 
-        {/* Tool group (refresh, export) - compact size matching More Actions */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center justify-center w-7 h-7
-                     bg-background-tertiary border border-border-primary rounded-md
-                     hover:border-macos-gray-2 hover:bg-background-elevated
-                     text-text-secondary transition-all duration-200 ease-macos
-                     shadow-macos-button
-                     active:shadow-macos-button-active active:scale-[0.97]
-                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
-          >
-            <i className={`fa-solid fa-rotate-right text-[13px] text-macos-green ${isRefreshing ? 'animate-spin' : ''}`}></i>
-          </button>
+          {/* Tool group */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Refresh"
+              className="flex items-center justify-center w-[34px] h-[34px]
+                       bg-background-tertiary/80 border border-border-primary rounded-md
+                       hover:border-border-tertiary hover:bg-background-hover
+                       text-text-secondary transition-all duration-200 ease-macos
+                       shadow-macos-button
+                       active:shadow-macos-button-active active:scale-[0.97]
+                       disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+            >
+              <i className={`fa-solid fa-rotate-right text-[12px] text-macos-green ${isRefreshing ? 'animate-spin' : ''}`}></i>
+            </button>
 
-          <button
-            onClick={handleExport}
-            className="flex items-center justify-center w-7 h-7
-                     bg-background-tertiary border border-border-primary rounded-md
-                     hover:border-macos-gray-2 hover:bg-background-elevated
-                     text-text-secondary transition-all duration-200 ease-macos
-                     shadow-macos-button
-                     active:shadow-macos-button-active active:scale-[0.97]"
-          >
-            <i className="fa-solid fa-download text-[13px] text-macos-purple"></i>
-          </button>
+            <button
+              onClick={handleExport}
+              title="Export"
+              className="flex items-center justify-center w-[34px] h-[34px]
+                       bg-background-tertiary/80 border border-border-primary rounded-md
+                       hover:border-border-tertiary hover:bg-background-hover
+                       text-text-secondary transition-all duration-200 ease-macos
+                       shadow-macos-button
+                       active:shadow-macos-button-active active:scale-[0.97]"
+            >
+              <i className="fa-solid fa-download text-[12px] text-macos-purple"></i>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* List view - Dark Mode */}
+      {/* List view - Dark Mode with horizontal scroll */}
       <div className="bg-background-secondary rounded-lg border border-border-primary overflow-hidden">
-        {/* Table header */}
-        <div className="flex bg-background-tertiary border-b border-border-primary text-xs items-center">
+        <div className="overflow-x-auto">
+          {/* Table header */}
+          <div className="flex bg-background-tertiary border-b border-border-primary text-xs min-w-[850px]">
           {/* Checkbox */}
-          <div className="w-9 pl-4 pr-2 py-3 flex items-center justify-center shrink-0">
+          <div className="w-9 pl-3 pr-2 py-2.5 flex items-center justify-center shrink-0">
             <Checkbox checked={isAllSelected} onChange={handleSelectAll} />
           </div>
           {/* ID */}
-          <div className="w-36 px-4 py-3 flex items-center justify-start relative shrink-0">
-            <span className="font-bold text-text-secondary">ID</span>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
+          <div className="w-32 px-2 py-2.5 flex items-center justify-start shrink-0">
+            <span className="font-semibold text-text-secondary">ID</span>
           </div>
           {/* Host Name */}
-          <div className="w-40 px-4 py-3 flex items-center justify-start relative shrink-0">
-            <span className="font-bold text-text-secondary">Host Name</span>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
+          <div className="w-40 px-2 py-2.5 flex items-center justify-start shrink-0">
+            <span className="font-semibold text-text-secondary">Host Name</span>
           </div>
           {/* Status */}
-          <div className="w-20 px-4 py-3 flex items-center justify-start relative shrink-0">
+          <div className="w-20 px-2 py-2.5 flex items-center justify-start shrink-0">
             <FilterDropdown column="Status" options={statusOptions} selectedValues={statusFilter} onChange={setStatusFilter} />
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
           </div>
           {/* Specs */}
-          <div className="w-24 px-4 py-3 flex items-center justify-start relative shrink-0">
-            <span className="font-bold text-text-secondary">Specs</span>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
+          <div className="w-24 px-2 py-2.5 flex items-center justify-start shrink-0">
+            <span className="font-semibold text-text-secondary">Specs</span>
           </div>
           {/* Swap */}
-          <div className="w-16 px-4 py-3 flex items-center justify-start relative shrink-0">
-            <span className="font-bold text-text-secondary">Swap</span>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
+          <div className="w-16 px-2 py-2.5 flex items-center justify-start shrink-0">
+            <span className="font-semibold text-text-secondary">Swap</span>
           </div>
           {/* Arch */}
-          <div className="w-16 px-4 py-3 flex items-center justify-start relative shrink-0">
+          <div className="w-16 px-2 py-2.5 flex items-center justify-start shrink-0">
             <FilterDropdown column="Arch" options={archOptions} selectedValues={archFilter} onChange={setArchFilter} />
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
           </div>
           {/* Kernel */}
-          <div className="w-52 px-4 py-3 flex items-center justify-start relative shrink-0">
-            <span className="font-bold text-text-secondary">Kernel</span>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
+          <div className="w-52 px-2 py-2.5 flex items-center justify-start shrink-0">
+            <span className="font-semibold text-text-secondary">Kernel</span>
           </div>
           {/* OS */}
-          <div className="w-24 px-4 py-3 flex items-center justify-start relative shrink-0">
+          <div className="w-24 px-2 py-2.5 flex items-center justify-start shrink-0">
             <FilterDropdown column="OS" options={osOptions} selectedValues={osFilter} onChange={setOsFilter} />
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
           </div>
           {/* IPv4 Address */}
-          <div className="w-40 px-4 py-3 flex items-center justify-start relative shrink-0">
-            <span className="font-bold text-text-secondary">IPv4 Address</span>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
+          <div className="w-40 px-2 py-2.5 flex items-center justify-start shrink-0">
+            <span className="font-semibold text-text-secondary">IP</span>
           </div>
           {/* Disk */}
-          <div className="w-48 px-4 py-3 flex items-center justify-start relative shrink-0">
-            <span className="font-bold text-text-secondary">Disk</span>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border-primary" />
+          <div className="w-48 px-2 py-2.5 flex items-center justify-start shrink-0">
+            <span className="font-semibold text-text-secondary">Disk</span>
           </div>
           {/* Actions */}
-          <div className="w-44 px-4 py-3 flex items-center justify-start shrink-0">
-            <span className="font-bold text-text-secondary">Actions</span>
+          <div className="px-2 py-2.5 flex items-center justify-start shrink-0 min-w-[110px]">
+            <span className="font-semibold text-text-secondary">Actions</span>
           </div>
         </div>
 
@@ -275,6 +274,7 @@ const HostsGrid = ({
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
         />
+        </div>
       </div>
 
       {/* Batch Operation Confirmation Dialog */}

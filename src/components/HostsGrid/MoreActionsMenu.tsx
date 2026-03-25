@@ -91,12 +91,12 @@ export const MoreActionsMenu = ({
         ref={buttonRef}
         onClick={onToggle}
         disabled={selectedCount === 0}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-background-tertiary border border-border-primary
-                 hover:border-macos-gray hover:bg-background-elevated disabled:opacity-40 disabled:cursor-not-allowed
-                 text-white rounded-md text-xs font-medium
+        className="flex items-center gap-1.5 px-3 py-2 bg-background-tertiary border border-border-primary
+                 hover:border-border-tertiary hover:bg-background-hover disabled:opacity-40 disabled:cursor-not-allowed
+                 text-text-primary rounded-md text-xs font-medium
                  transition-all duration-200 ease-macos
-                 shadow-[0_0.5px_1px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.04)]
-                 active:shadow-[inset_0_0.5px_2px_rgba(0,0,0,0.08)] active:scale-[0.97]"
+                 shadow-macos-button
+                 active:shadow-macos-button-active active:scale-[0.97] h-[34px]"
       >
         <span>More Actions</span>
         {selectedCount > 0 && (
@@ -104,7 +104,7 @@ export const MoreActionsMenu = ({
             {selectedCount}
           </span>
         )}
-        <i className="fa-solid fa-chevron-down text-[10px] text-macos-gray"></i>
+        <i className="fa-solid fa-chevron-down text-[10px] text-text-tertiary"></i>
       </button>
     );
   }
@@ -115,12 +115,12 @@ export const MoreActionsMenu = ({
         ref={buttonRef}
         onClick={onToggle}
         disabled={selectedCount === 0}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-background-tertiary border border-border-primary
-                 hover:border-macos-gray hover:bg-background-elevated disabled:opacity-40 disabled:cursor-not-allowed
-                 text-white rounded-md text-xs font-medium
+        className="flex items-center gap-1.5 px-3 py-2 bg-background-tertiary border border-border-primary
+                 hover:border-border-tertiary hover:bg-background-hover disabled:opacity-40 disabled:cursor-not-allowed
+                 text-text-primary rounded-md text-xs font-medium
                  transition-all duration-200 ease-macos
-                 shadow-[0_0.5px_1px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.04)]
-                 active:shadow-[inset_0_0.5px_2px_rgba(0,0,0,0.08)] active:scale-[0.97]"
+                 shadow-macos-button
+                 active:shadow-macos-button-active active:scale-[0.97] h-[34px]"
       >
         <span>More Actions</span>
         {selectedCount > 0 && (
@@ -128,7 +128,7 @@ export const MoreActionsMenu = ({
             {selectedCount}
           </span>
         )}
-        <i className="fa-solid fa-chevron-down text-[10px] text-macos-gray rotate-180 transition-transform"></i>
+        <i className="fa-solid fa-chevron-down text-[10px] text-text-tertiary rotate-180 transition-transform"></i>
       </button>
 
       {createPortal(

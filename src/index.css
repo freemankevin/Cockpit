@@ -9,7 +9,7 @@
 @tailwind utilities;
 
 /* ============================================
-   macOS Dark Mode Design System - Global Styles
+   macOS Sonoma Dark Mode Design System - Global Styles
    ============================================ */
 
 /* 基础样式 - 苹果风格字体 */
@@ -21,13 +21,13 @@ html {
 }
 
 body {
-  font-family: 'Inter', 'Noto Serif Khitan Small Script', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1C1C1E;
-  color: #FFFFFF;
-  line-height: 1.47059;
-  letter-spacing: -0.022em;
+  background-color: #161617;
+  color: #F5F5F7;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
   margin: 0;
   padding: 0;
 }
@@ -75,20 +75,20 @@ code, pre, .font-mono {
 
   /* 次要按钮 */
   .btn-secondary {
-    @apply px-4 py-2 bg-background-tertiary text-white rounded-macos text-sm font-medium
+    @apply px-4 py-2 bg-background-tertiary text-text-primary rounded-macos text-sm font-medium
            border border-border-primary
            transition-all duration-200 ease-macos
            shadow-macos-button
-           hover:bg-background-elevated hover:border-border-primary
-           active:shadow-macos-button-active active:bg-macos-gray-3 active:scale-[0.98];
+           hover:bg-background-hover hover:border-border-tertiary
+           active:shadow-macos-button-active active:scale-[0.98];
   }
 
   /* 幽灵按钮 */
   .btn-ghost {
     @apply px-3 py-1.5 text-macos-blue text-sm font-medium
            transition-all duration-200 ease-macos
-           hover:bg-macos-blue/20 rounded-macos-sm
-           active:bg-macos-blue/30 active:scale-[0.98];
+           hover:bg-macos-blue/15 rounded-macos-sm
+           active:bg-macos-blue/25 active:scale-[0.98];
   }
 
   /* 危险按钮 */
@@ -100,18 +100,18 @@ code, pre, .font-mono {
            active:shadow-macos-button-active active:scale-[0.98];
   }
 
-  /* macOS 暗模式卡片 */
+  /* macOS 暗模式卡片 - 更有层次 */
   .card-macos {
     @apply bg-background-secondary rounded-macos-lg border border-border-primary
            shadow-macos-card
            transition-all duration-300 ease-macos
-           hover:shadow-macos-card-hover hover:border-border-primary;
+           hover:shadow-macos-card-hover hover:border-border-tertiary;
   }
 
   /* macOS 暗模式输入框 */
   .input-macos {
     @apply w-full px-3 py-2 bg-background-tertiary border border-border-primary rounded-macos-sm
-           text-sm text-white placeholder-macos-gray
+           text-sm text-text-primary placeholder-text-tertiary
            transition-all duration-200 ease-macos
            shadow-macos-input
            focus:outline-none focus:border-macos-blue focus:shadow-macos-input-focus
@@ -134,11 +134,11 @@ code, pre, .font-mono {
   }
 
   .sidebar-item-active {
-    @apply bg-macos-blue/20 text-macos-blue;
+    @apply bg-macos-blue/15 text-macos-blue;
   }
 
   .sidebar-item-inactive {
-    @apply text-text-secondary hover:bg-background-tertiary hover:text-white;
+    @apply text-text-secondary hover:bg-background-tertiary hover:text-text-primary;
   }
 
   /* 状态脉冲动画 */
@@ -153,7 +153,7 @@ code, pre, .font-mono {
 
   /* macOS 暗模式玻璃效果 */
   .glass-macos {
-    @apply bg-background-secondary/80 backdrop-blur-xl;
+    @apply bg-background-secondary/85 backdrop-blur-xl;
   }
 
   /* macOS 暗模式窗口 */
@@ -255,14 +255,14 @@ code, pre, .font-mono {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -276,7 +276,7 @@ code, pre, .font-mono {
    ============================================ */
 .scrollbar-custom {
   scrollbar-width: 10px;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 .scrollbar-custom::-webkit-scrollbar {
@@ -285,12 +285,12 @@ code, pre, .font-mono {
 }
 
 .scrollbar-custom::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 5px;
 }
 
 .scrollbar-custom::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 5px;
   border: 2px solid transparent;
   background-clip: padding-box;
@@ -298,13 +298,13 @@ code, pre, .font-mono {
 }
 
 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.28);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .scrollbar-custom::-webkit-scrollbar-thumb:active {
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.36);
 }
 
 .scrollbar-custom::-webkit-scrollbar-corner {
@@ -567,19 +567,19 @@ code, pre, .font-mono {
 
 /* 状态背景色 */
 .bg-status-online {
-  @apply bg-macos-green/20;
+  @apply bg-macos-green/15;
 }
 
 .bg-status-offline {
-  @apply bg-macos-red/20;
+  @apply bg-macos-red/15;
 }
 
 .bg-status-warning {
-  @apply bg-macos-orange/20;
+  @apply bg-macos-orange/15;
 }
 
 .bg-status-info {
-  @apply bg-macos-blue/20;
+  @apply bg-macos-blue/15;
 }
 
 /* ============================================
@@ -587,7 +587,7 @@ code, pre, .font-mono {
    ============================================ */
 input::placeholder,
 textarea::placeholder {
-  color: #636366;
+  color: #6E6E73;
   opacity: 1;
 }
 
@@ -603,7 +603,7 @@ textarea::placeholder {
 }
 
 .table-macos th {
-  @apply px-4 py-3 text-left font-medium;
+  @apply px-4 py-3 text-left font-semibold;
 }
 
 .table-macos td {
@@ -615,7 +615,7 @@ textarea::placeholder {
 }
 
 .table-macos tbody tr:hover {
-  @apply bg-background-tertiary/50;
+  @apply bg-background-tertiary/60;
 }
 
 /* ============================================
@@ -627,12 +627,12 @@ textarea::placeholder {
 }
 
 .dropdown-item {
-  @apply px-3 py-2 text-sm text-white
+  @apply px-3 py-2 text-sm text-text-primary
          transition-colors duration-150 cursor-pointer;
 }
 
 .dropdown-item:hover {
-  @apply bg-macos-blue/20 text-macos-blue;
+  @apply bg-macos-blue/15 text-macos-blue;
 }
 
 .dropdown-item-danger {
@@ -640,7 +640,7 @@ textarea::placeholder {
 }
 
 .dropdown-item-danger:hover {
-  @apply bg-macos-red/20 text-macos-red;
+  @apply bg-macos-red/15 text-macos-red;
 }
 
 /* ============================================
@@ -674,23 +674,23 @@ textarea::placeholder {
 }
 
 .badge-primary {
-  @apply bg-macos-blue/20 text-macos-blue;
+  @apply bg-macos-blue/15 text-macos-blue;
 }
 
 .badge-success {
-  @apply bg-macos-green/20 text-macos-green;
+  @apply bg-macos-green/15 text-macos-green;
 }
 
 .badge-warning {
-  @apply bg-macos-orange/20 text-macos-orange;
+  @apply bg-macos-orange/15 text-macos-orange;
 }
 
 .badge-danger {
-  @apply bg-macos-red/20 text-macos-red;
+  @apply bg-macos-red/15 text-macos-red;
 }
 
 .badge-info {
-  @apply bg-macos-teal/20 text-macos-teal;
+  @apply bg-macos-teal/15 text-macos-teal;
 }
 
 /* ============================================

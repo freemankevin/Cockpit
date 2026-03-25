@@ -47,33 +47,12 @@ export const HostListItem = ({
         </div>
         {/* Host ID */}
         <div className="w-36 px-4 py-3 shrink-0">
-          <div className="flex items-center gap-1.5 group/copy">
-            <span className="text-xs text-text-tertiary truncate">{host.host_id}</span>
-            <button
-              onClick={() => onCopy(host.host_id, `host-${host.id}-id`)}
-              className="p-1 rounded transition-all relative opacity-0 group-hover/copy:opacity-100 active:scale-90 flex items-center justify-center"
-              title="Copy"
-            >
-              {copiedField === `host-${host.id}-id` ? (
-                <i className="fa-solid fa-check text-xs text-macos-green"></i>
-              ) : (
-                <i className="fa-regular fa-copy text-xs text-text-tertiary hover:text-white"></i>
-              )}
-              {copiedField === `host-${host.id}-id` && (
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center z-50 animate-fade-in">
-                  <div className="px-3 py-1.5 bg-macos-green text-white text-xs font-semibold rounded-lg shadow-macos-dropdown whitespace-nowrap">
-                    Copied!
-                  </div>
-                  <div className="w-2 h-2 bg-macos-green rotate-45 -mt-1"></div>
-                </div>
-              )}
-            </button>
-          </div>
+          <span className="text-xs text-text-primary truncate">{host.host_id}</span>
         </div>
         {/* Host Name */}
         <div className="w-40 px-4 py-3 shrink-0">
           <div className="flex items-center gap-1.5 group/copy min-w-0">
-            <span className="text-xs text-text-secondary truncate">{host.name || host.address}</span>
+            <span className="text-xs text-text-primary truncate">{host.name || host.address}</span>
             <button
               onClick={() => onCopy(host.name || host.address, `host-${host.id}-name`)}
               className="p-1 rounded transition-all shrink-0 relative opacity-0 group-hover/copy:opacity-100 active:scale-90 flex items-center justify-center"
@@ -103,27 +82,27 @@ export const HostListItem = ({
 
         {/* Specs - CPU/RAM */}
         <div className="w-28 px-4 py-3 shrink-0 flex items-center">
-          <span className="text-xs text-text-secondary whitespace-nowrap">
+          <span className="text-xs text-text-primary whitespace-nowrap">
             {host.cpu_cores ? `${host.cpu_cores}C ` : ''}{formatMemory(host.memory_gb)}
           </span>
         </div>
 
         {/* Swap */}
         <div className="w-16 px-4 py-3 shrink-0 flex items-center">
-          <span className="text-xs text-text-tertiary">
-            {host.swap_gb ? `${host.swap_gb} GB` : '0'}
+          <span className="text-xs text-text-primary">
+            {formatMemory(host.swap_gb) || '0'}
           </span>
         </div>
 
         {/* Arch */}
         <div className="w-16 px-4 py-3 shrink-0 flex items-center">
-          <span className="text-xs text-text-tertiary font-mono">{host.architecture || '-'}</span>
+          <span className="text-xs text-text-primary font-mono">{host.architecture || '-'}</span>
         </div>
 
         {/* Kernel */}
         <div className="w-52 px-4 py-3 shrink-0 flex items-center">
           <div className="flex items-center gap-1.5 group/copy min-w-0">
-            <span className="text-xs text-text-tertiary font-mono truncate" title={host.kernel_version || ''}>{host.kernel_version || '-'}</span>
+            <span className="text-xs text-text-primary font-mono truncate" title={host.kernel_version || ''}>{host.kernel_version || '-'}</span>
             {host.kernel_version && (
               <button
                 onClick={() => onCopy(host.kernel_version!, `host-${host.id}-kernel`)}
