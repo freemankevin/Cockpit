@@ -1,14 +1,15 @@
 import axios from 'axios';
-import type { 
-  SSHHost, 
-  SSHKey, 
-  CreateHostRequest, 
-  UpdateHostRequest, 
-  HostStats, 
+import type {
+  SSHHost,
+  SSHKey,
+  CreateHostRequest,
+  UpdateHostRequest,
+  HostStats,
   ApiResponse,
   CommandResult,
-  ConnectionTestResult 
+  ConnectionTestResult
 } from '@/types';
+import { tokenManager } from './authApi';
 
 // Create axios instance
 const api = axios.create({
@@ -22,6 +23,12 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // Add JWT token to Authorization header
+    const token = tokenManager.getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
     // If data is FormData, delete default Content-Type to let browser set correct multipart/form-data boundary
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];

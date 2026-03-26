@@ -11,8 +11,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"deploy-master/pkg/logger"
-	"deploy-master/services"
+	"cockpit/pkg/logger"
+	"cockpit/services"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/text/encoding/simplifiedchinese"

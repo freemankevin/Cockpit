@@ -5,13 +5,28 @@ import { HostsGrid } from './components/HostsGrid';
 import AddHostModal from './components/AddHostModal';
 import TerminalModal from './components/TerminalModal';
 import SFTPModal from './components/SFTPModal';
+import LoginPage from './components/LoginPage';
+import UserManagement from './components/UserManagement';
 import { ToastContainer } from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { useDialog } from './components/Dialog';
 import { hostApi } from './services/api';
-import type { SSHHost, CreateHostRequest, UpdateHostRequest, OpenWindow, WindowType } from './types';
+import { isAuthenticated, getCurrentUser, tokenManager } from './services/authApi';
+import type { SSHHost, CreateHostRequest, UpdateHostRequest, OpenWindow, WindowType, User } from './types';
+
+// Page type for navigation
+type PageType = 'hosts' | 'users';
 
 function App() {
+  // Auth state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  
+  // Page state
+  const [currentPage, setCurrentPage] = useState<PageType>('hosts');
+  
+  // Hosts state
   const [hosts, setHosts] = useState<SSHHost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -20,6 +35,34 @@ function App() {
   const [copyingHost, setCopyingHost] = useState<SSHHost | null>(null);
   const { toasts, removeToast, success, error } = useToast();
   const { showDialog, dialogComponent } = useDialog();
+
+  // Check authentication on mount
+  useEffect(() => {
+    const authenticated = isAuthenticated();
+    if (authenticated) {
+      const user = getCurrentUser();
+      if (user) {
+        setIsLoggedIn(true);
+        setCurrentUser(user);
+      }
+    }
+    setAuthChecked(true);
+  }, []);
+
+  // Handle login success
+  const handleLoginSuccess = useCallback(() => {
+    const user = getCurrentUser();
+    setIsLoggedIn(true);
+    setCurrentUser(user);
+  }, []);
+
+  // Handle logout
+  const handleLogout = useCallback(() => {
+    tokenManager.clearTokens();
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    setCurrentPage('hosts');
+  }, []);
 
   // Load host list
   const loadHosts = useCallback(async () => {
@@ -41,10 +84,12 @@ function App() {
     }
   }, [error]);
 
-  // Initialize load
+  // Initialize load - only when authenticated
   useEffect(() => {
-    loadHosts();
-  }, [loadHosts]);
+    if (isLoggedIn && currentUser) {
+      loadHosts();
+    }
+  }, [isLoggedIn, currentUser, loadHosts]);
 
   // Add host
   const handleAddHost = async (data: CreateHostRequest) => {
@@ -206,12 +251,33 @@ function App() {
 
   // Get minimized windows for display
   const minimizedWindows = openWindows.filter(w => w.isMinimized);
-  const activeWindows = openWindows.filter(w => !w.isMinimized);
+
+  // Show loading while checking auth
+  if (!authChecked) {
+    return (
+      <div className="bg-background-primary h-screen flex items-center justify-center">
+        <div className="text-text-secondary">
+          <i className="fa-solid fa-spinner fa-spin text-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!isLoggedIn || !currentUser) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="bg-background-primary text-text-primary h-screen overflow-hidden flex m-0 p-0">
       {/* Sidebar */}
-      <Sidebar hostCount={hosts.length} />
+      <Sidebar 
+        hostCount={hosts.length} 
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col bg-background-primary relative">
@@ -221,22 +287,26 @@ function App() {
         </div>
         
         {/* Header */}
-        <Header />
+        <Header currentUser={currentUser} onLogout={handleLogout} />
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6 relative z-10">
-          <HostsGrid
-            hosts={hosts}
-            loading={loading}
-            onEdit={handleEditHost}
-            onDelete={handleDeleteHost}
-            onTestConnection={handleTestConnection}
-            onOpenTerminal={handleOpenTerminal}
-            onOpenSFTP={handleOpenSFTP}
-            onAddHost={() => setIsAddModalOpen(true)}
-            onCopyHost={handleCopyHost}
-            onRefresh={loadHosts}
-          />
+          {currentPage === 'users' ? (
+            <UserManagement currentUser={currentUser} />
+          ) : (
+            <HostsGrid
+              hosts={hosts}
+              loading={loading}
+              onEdit={handleEditHost}
+              onDelete={handleDeleteHost}
+              onTestConnection={handleTestConnection}
+              onOpenTerminal={handleOpenTerminal}
+              onOpenSFTP={handleOpenSFTP}
+              onAddHost={() => setIsAddModalOpen(true)}
+              onCopyHost={handleCopyHost}
+              onRefresh={loadHosts}
+            />
+          )}
         </div>
       </main>
 

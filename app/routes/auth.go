@@ -1,0 +1,293 @@
+package routes
+
+import (
+	"net/http"
+	"time"
+
+	"cockpit/database"
+	"cockpit/middleware"
+	"cockpit/models"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+// AuthRoutes 认证路由
+func AuthRoutes(r *gin.RouterGroup, db *gorm.DB) {
+	auth := r.Group("/auth")
+
+	// 公开路由（无需认证）
+	auth.POST("/login", loginHandler(db))
+	auth.POST("/refresh", refreshTokenHandler(db))
+
+	// 需要认证的路由
+	auth.Use(middleware.JWTAuthMiddleware(db))
+	auth.POST("/logout", logoutHandler)
+	auth.GET("/me", getCurrentUserHandler)
+	auth.PUT("/password", updatePasswordHandler(db))
+}
+
+// loginHandler 登录处理
+func loginHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req models.LoginRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "请求参数错误",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 查找用户
+		user, err := database.GetUserByUsername(req.Username)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "服务器内部错误",
+				"data":    nil,
+			})
+			return
+		}
+
+		if user == nil {
+			// 记录审计日志
+			recordAuditLog(db, nil, req.Username, "login", "user", 0, "登录失败：用户不存在", c, "failed")
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"code":    401,
+				"message": "用户名或密码错误",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 检查账号是否被锁定
+		if user.IsLocked() {
+			recordAuditLog(db, &user.ID, user.Username, "login", "user", user.ID, "登录失败：账号已锁定", c, "failed")
+			c.JSON(http.StatusForbidden, gin.H{
+				"code":    403,
+				"message": "账号已被锁定，请稍后再试",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 检查账号是否激活
+		if !user.IsActive {
+			recordAuditLog(db, &user.ID, user.Username, "login", "user", user.ID, "登录失败：账号已禁用", c, "failed")
+			c.JSON(http.StatusForbidden, gin.H{
+				"code":    403,
+				"message": "账号已被禁用",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 验证密码
+		if !middleware.CheckPassword(req.Password, user.PasswordHash) {
+			// 记录失败尝试
+			database.RecordLoginAttempt(user.ID, false)
+			recordAuditLog(db, &user.ID, user.Username, "login", "user", user.ID, "登录失败：密码错误", c, "failed")
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"code":    401,
+				"message": "用户名或密码错误",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 登录成功，生成 Token
+		tokenPair, err := middleware.GenerateTokenPair(user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "生成令牌失败",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 更新最后登录信息
+		clientIP := c.ClientIP()
+		database.UpdateLastLogin(user.ID, clientIP)
+
+		// 记录审计日志
+		recordAuditLog(db, &user.ID, user.Username, "login", "user", user.ID, "登录成功", c, "success")
+
+		c.JSON(http.StatusOK, gin.H{
+			"code":    0,
+			"message": "登录成功",
+			"data":    tokenPair,
+		})
+	}
+}
+
+// refreshTokenHandler 刷新 Token
+func refreshTokenHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req models.RefreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "请求参数错误",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 解析 refresh token
+		userID, err := middleware.ParseRefreshToken(req.RefreshToken)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"code":    401,
+				"message": "刷新令牌无效或已过期",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 查找用户
+		user, err := database.GetUserByID(userID)
+		if err != nil || user == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"code":    401,
+				"message": "用户不存在",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 检查账号状态
+		if !user.IsActive {
+			c.JSON(http.StatusForbidden, gin.H{
+				"code":    403,
+				"message": "账号已被禁用",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 生成新的 Token
+		tokenPair, err := middleware.GenerateTokenPair(user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "生成令牌失败",
+				"data":    nil,
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"code":    0,
+			"message": "刷新成功",
+			"data":    tokenPair,
+		})
+	}
+}
+
+// logoutHandler 登出处理
+func logoutHandler(c *gin.Context) {
+	// JWT 是无状态的，登出只需客户端删除 Token
+	// 如果需要服务端失效，可以将 Token 加入黑名单（使用 Redis）
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "登出成功",
+		"data":    nil,
+	})
+}
+
+// getCurrentUserHandler 获取当前用户信息
+func getCurrentUserHandler(c *gin.Context) {
+	user := middleware.GetCurrentUser(c)
+	if user == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"code":    401,
+			"message": "未认证",
+			"data":    nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "success",
+		"data":    user.ToResponse(),
+	})
+}
+
+// updatePasswordHandler 更新密码
+func updatePasswordHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req models.UpdatePasswordRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "请求参数错误",
+				"data":    nil,
+			})
+			return
+		}
+
+		user := middleware.GetCurrentUser(c)
+		if user == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"code":    401,
+				"message": "未认证",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 验证旧密码
+		if !middleware.CheckPassword(req.OldPassword, user.PasswordHash) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "原密码错误",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 更新密码
+		if err := database.UpdateUserPassword(user.ID, req.NewPassword); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "更新密码失败",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 记录审计日志
+		recordAuditLog(db, &user.ID, user.Username, "update_password", "user", user.ID, "修改密码成功", c, "success")
+
+		c.JSON(http.StatusOK, gin.H{
+			"code":    0,
+			"message": "密码修改成功",
+			"data":    nil,
+		})
+	}
+}
+
+// recordAuditLog 记录审计日志
+func recordAuditLog(db *gorm.DB, userID *uint, username, action, resource string, resourceID uint, detail string, c *gin.Context, status string) {
+	log := &models.AuditLog{
+		UserID:     userID,
+		Username:   username,
+		Action:     action,
+		Resource:   resource,
+		ResourceID: resourceID,
+		Detail:     detail,
+		SourceIP:   c.ClientIP(),
+		UserAgent:  c.GetHeader("User-Agent"),
+		Status:     status,
+		CreatedAt:  time.Now(),
+	}
+
+	// 异步写入审计日志
+	go func() {
+		database.CreateAuditLog(log)
+	}()
+}

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"deploy-master/models"
+	"cockpit/models"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -22,7 +22,7 @@ func InitDB() {
 		os.Exit(1)
 	}
 
-	dbPath := filepath.Join(dataDir, "deploy_master.db")
+	dbPath := filepath.Join(dataDir, "cockpit.db")
 	
 	var err error
 	DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{
@@ -34,7 +34,13 @@ func InitDB() {
 	}
 
 	// 自动迁移
-	if err := DB.AutoMigrate(&models.Host{}, &models.SSHKey{}, &models.TransferRecord{}); err != nil {
+	if err := DB.AutoMigrate(
+		&models.Host{},
+		&models.SSHKey{},
+		&models.TransferRecord{},
+		&models.User{},
+		&models.AuditLog{},
+	); err != nil {
 		fmt.Printf("  \033[31m✗\033[0m Failed to migrate database: %v\n", err)
 		os.Exit(1)
 	}

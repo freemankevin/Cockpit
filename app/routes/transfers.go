@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"deploy-master/database"
-	"deploy-master/models"
+	"cockpit/database"
+	"cockpit/models"
 
 	"github.com/gin-gonic/gin"
 )

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"deploy-master/config"
+	"cockpit/config"
 )
 
 // GetSystemInfo 获取系统信息

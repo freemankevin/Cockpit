@@ -1,7 +1,7 @@
 {
-  "name": "deploymaster",
+  "name": "cockpit",
   "version": "1.0.0",
-  "description": "DeployMaster - 自动化部署平台",
+  "description": "Cockpit - 自动化部署平台",
   "type": "module",
   "scripts": {
     "dev": "vite",

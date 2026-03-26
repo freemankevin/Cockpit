@@ -2,10 +2,10 @@ package main
 
 import (
 	"bufio"
-	"deploy-master/config"
-	"deploy-master/database"
-	"deploy-master/middleware"
-	"deploy-master/routes"
+	"cockpit/config"
+	"cockpit/database"
+	"cockpit/middleware"
+	"cockpit/routes"
 	"fmt"
 	"net"
 	"os"
@@ -19,19 +19,45 @@ import (
 )
 
 const (
-	APP_VERSION    = "1.0.0"
-	APP_PORT       = 8000
-	OUR_PROCESS_NAME = "deploy-master"
+	APP_VERSION      = "1.0.0"
+	APP_PORT         = 8000
+	OUR_PROCESS_NAME = "cockpit"
+)
+
+// 颜色定义
+const (
+	colorReset  = "\033[0m"
+	colorGray   = "\033[90m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorRed    = "\033[31m"
 )
 
 // 可能的进程名列表
-var OUR_PROCESS_NAMES = []string{"deploy-master", "deploy-master.exe", "main", "main.exe"}
+var OUR_PROCESS_NAMES = []string{"cockpit", "cockpit.exe", "main", "main.exe"}
 
 // ProcessInfo 进程信息
 type ProcessInfo struct {
 	PID         int
 	Name        string
 	IsOurProcess bool
+}
+
+// logPrint 统一日志格式输出
+func logPrint(level, message string) {
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	var levelColor string
+	switch level {
+	case "INFO ":
+		levelColor = colorGreen
+	case "WARN ":
+		levelColor = colorYellow
+	case "ERROR":
+		levelColor = colorRed
+	default:
+		levelColor = colorGreen
+	}
+	fmt.Printf("%s%s%s [%s%s%s] %s\n", colorGray, timestamp, colorReset, levelColor, level, colorReset, message)
 }
 
 // checkAndKillProcessOnPort 检查并终止占用指定端口的进程
@@ -54,39 +80,35 @@ func checkAndKillProcessOnPort(port int) (bool, error) {
 	}
 
 	// 打印端口占用信息
-	fmt.Printf("\n")
-	fmt.Printf("  ┌─────────────────────────────────────────────────────────────┐\n")
-	fmt.Printf("  │  ⚠ Port %d is occupied                                      \n", port)
-	fmt.Printf("  └─────────────────────────────────────────────────────────────┘\n")
-	fmt.Printf("\n")
+	logPrint("WARN ", fmt.Sprintf("Port %d is occupied", port))
 
 	for _, proc := range processes {
 		if proc.IsOurProcess {
 			// 我们自己的旧进程，自动清理
-			fmt.Printf("  ◈ Detected previous %s instance (PID: %d)\n", OUR_PROCESS_NAME, proc.PID)
-			fmt.Printf("  ◈ Automatically terminating previous instance...\n")
+			logPrint("INFO ", fmt.Sprintf("Detected previous %s instance (PID: %d)", OUR_PROCESS_NAME, proc.PID))
+			logPrint("INFO ", "Automatically terminating previous instance...")
 			
 			if err := killProcess(proc.PID); err != nil {
-				fmt.Printf("  ◈ Failed to terminate PID %d: %v\n", proc.PID, err)
+				logPrint("ERROR", fmt.Sprintf("Failed to terminate PID %d: %v", proc.PID, err))
 				continue
 			}
-			fmt.Printf("  ◈ Previous instance terminated successfully\n")
+			logPrint("INFO ", "Previous instance terminated successfully")
 		} else {
 			// 其他服务的进程，需要用户确认
-			fmt.Printf("  ◈ Port %d is occupied by external service: %s (PID: %d)\n", port, proc.Name, proc.PID)
-			fmt.Printf("  ◈ Waiting for user confirmation to terminate...\n")
+			logPrint("WARN ", fmt.Sprintf("Port %d is occupied by external service: %s (PID: %d)", port, proc.Name, proc.PID))
+			logPrint("INFO ", "Waiting for user confirmation to terminate...")
 			
 			// 等待用户确认
 			if !confirmKill(proc) {
-				fmt.Printf("  ◈ User declined to terminate external process\n")
+				logPrint("INFO ", "User declined to terminate external process")
 				return false, fmt.Errorf("user declined to terminate external process %s (PID: %d)", proc.Name, proc.PID)
 			}
 			
 			if err := killProcess(proc.PID); err != nil {
-				fmt.Printf("  ◈ Failed to terminate PID %d: %v\n", proc.PID, err)
+				logPrint("ERROR", fmt.Sprintf("Failed to terminate PID %d: %v", proc.PID, err))
 				return false, fmt.Errorf("failed to terminate external process: %v", err)
 			}
-			fmt.Printf("  ◈ External process terminated successfully\n")
+			logPrint("INFO ", "External process terminated successfully")
 		}
 	}
 
@@ -97,7 +119,7 @@ func checkAndKillProcessOnPort(port int) (bool, error) {
 	ln, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err == nil {
 		ln.Close()
-		fmt.Printf("  ◈ Port %d is now available\n", port)
+		logPrint("INFO ", fmt.Sprintf("Port %d is now available", port))
 		return true, nil
 	}
 	
@@ -248,17 +270,8 @@ func killProcess(pid int) error {
 
 // confirmKill 等待用户确认是否终止外部进程
 func confirmKill(proc ProcessInfo) bool {
-	fmt.Printf("\n")
-	fmt.Printf("  ┌─────────────────────────────────────────────────────────────┐\n")
-	fmt.Printf("  │  ⚡ External process detected                               │\n")
-	fmt.Printf("  │                                                             │\n")
-	fmt.Printf("  │  Process: %-45s │\n", proc.Name)
-	fmt.Printf("  │  PID:     %-46d │\n", proc.PID)
-	fmt.Printf("  │                                                             │\n")
-	fmt.Printf("  │  Do you want to terminate this process? (y/n):             │\n")
-	fmt.Printf("  └─────────────────────────────────────────────────────────────┘\n")
-	fmt.Printf("\n")
-	fmt.Printf("  > Enter choice: ")
+	logPrint("WARN ", fmt.Sprintf("External process detected: %s (PID: %d)", proc.Name, proc.PID))
+	fmt.Printf("Do you want to terminate this process? (y/n): ")
 
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
@@ -268,17 +281,6 @@ func confirmKill(proc ProcessInfo) bool {
 
 	input = strings.TrimSpace(strings.ToLower(input))
 	return input == "y" || input == "yes"
-}
-
-// truncateString 截断字符串到指定长度，添加省略号
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	if maxLen <= 3 {
-		return s[:maxLen]
-	}
-	return s[:maxLen-3] + "..."
 }
 
 // getServerAddr 获取服务器绑定地址
@@ -297,15 +299,8 @@ func main() {
 	portFree, err := checkAndKillProcessOnPort(APP_PORT)
 	if err != nil {
 		if !portFree {
-			fmt.Printf("\n")
-			fmt.Printf("  ┌─────────────────────────────────────────────────────────────┐\n")
-			fmt.Printf("  │  ✗ Failed to start server                                 │\n")
-			fmt.Printf("  │                                                             │\n")
-			fmt.Printf("  │  Reason: %s\n", truncateString(err.Error(), 58))
-			fmt.Printf("  │                                                             │\n")
-			fmt.Printf("  │  Please manually free up port %d and try again.           │\n", APP_PORT)
-			fmt.Printf("  └─────────────────────────────────────────────────────────────┘\n")
-			fmt.Printf("\n")
+			logPrint("ERROR", fmt.Sprintf("Failed to start server: %s", err.Error()))
+			logPrint("ERROR", fmt.Sprintf("Please manually free up port %d and try again.", APP_PORT))
 			os.Exit(1)
 		}
 	}
@@ -317,6 +312,15 @@ func main() {
 	database.InitDB()
 	middleware.PrintStartupInfo("Database initialized", "success")
 
+	// 初始化 JWT
+	middleware.InitJWT("")
+	middleware.PrintStartupInfo("JWT authentication initialized", "success")
+
+	// 初始化默认管理员账号
+	if err := database.InitDefaultAdmin(); err != nil {
+		middleware.PrintStartupInfo("Failed to create default admin: "+err.Error(), "error")
+	}
+
 	// 初始化 SSH 连接池
 	config.InitConnectionPool()
 	middleware.PrintStartupInfo("SSH connection pool ready", "success")
@@ -326,11 +330,8 @@ func main() {
 	middleware.PrintStartupInfo("Auto-connecting to all hosts", "success")
 
 	// 启动 HTTP 服务器
-	router := routes.SetupRouter()
+	router := routes.SetupRouter(database.DB)
 	middleware.PrintStartupInfo("API routes configured", "success")
-
-	// 打印空行分隔
-	fmt.Println()
 
 	// 启动服务器 (在 goroutine 中)
 	serverAddr := getServerAddr()

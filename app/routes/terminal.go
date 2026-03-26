@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"deploy-master/config"
-	"deploy-master/database"
-	"deploy-master/models"
-	"deploy-master/pkg/logger"
+	"cockpit/config"
+	"cockpit/database"
+	"cockpit/models"
+	"cockpit/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

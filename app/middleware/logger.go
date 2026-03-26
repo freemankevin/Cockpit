@@ -5,22 +5,17 @@ import (
 	"strings"
 	"time"
 
-	"deploy-master/pkg/logger"
+	"cockpit/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
-// 颜色定义（用于启动横幅和表格打印）
+// 颜色定义
 const (
-	colorReset   = "\033[0m"
-	colorRed     = "\033[31m"
-	colorGreen   = "\033[32m"
-	colorYellow  = "\033[33m"
-	colorBlue    = "\033[34m"
-	colorPurple  = "\033[35m"
-	colorCyan    = "\033[36m"
-	colorWhite   = "\033[37m"
-	colorGray    = "\033[90m"
-	colorBold    = "\033[1m"
+	colorReset  = "\033[0m"
+	colorGray   = "\033[90m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorRed    = "\033[31m"
 )
 
 // LoggerConfig 日志配置
@@ -160,107 +155,33 @@ func formatSize(bytes int64) string {
 
 // PrintBanner 打印启动横幅
 func PrintBanner(port int, version string) {
-	banner := fmt.Sprintf(`
-%s╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║   ██████╗ ███████╗ █████╗ ████████╗███████╗               ║
-║   ██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝               ║
-║   ██║  ██║█████╗  ███████║   ██║   █████╗                 ║
-║   ██║  ██║██╔══╝  ██╔══██║   ██║   ██╔══╝                 ║
-║   ██████╔╝███████╗██║  ██║   ██║   ███████╗               ║
-║   ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝               ║
-║                                                           ║
-║   %sDeploy Master%s - Server Deployment & Management Platform   ║
-║   Version: %-46s ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝%s
-
-`, colorCyan, colorBold+colorWhite, colorReset, version, colorReset)
-
-	fmt.Print(banner)
-
-	// 服务信息
-	fmt.Printf("%s┌─%s Server Info %s", colorCyan, colorReset, colorCyan)
-	fmt.Printf("%s\n", strings.Repeat("─", 48))
-
-	fmt.Printf("│ %s◈%s Port:    %shttp://localhost:%d%s\n",
-		colorGreen, colorReset, colorBlue, port, colorReset)
-	fmt.Printf("│ %s◈%s Mode:    %s%s%s\n",
-		colorGreen, colorReset, colorYellow, "development", colorReset)
-	fmt.Printf("│ %s◈%s API:     %s/api/*%s\n",
-		colorGreen, colorReset, colorPurple, colorReset)
-	fmt.Printf("│ %s◈%s Health:  %s/api/health%s\n",
-		colorGreen, colorReset, colorPurple, colorReset)
-
-	fmt.Printf("%s└%s%s\n\n", colorCyan, strings.Repeat("─", 58), colorReset)
-
-	fmt.Printf("%s➜%s Press %sCtrl+C%s to stop the server\n\n", colorGreen, colorReset, colorBold, colorReset)
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	fmt.Printf("%s%s%s [%sINFO %s] [Cockpit] Server Deployment & Management Platform v%s\n",
+		colorGray, timestamp, colorReset, colorGreen, colorReset, version)
+	fmt.Printf("%s%s%s [%sINFO %s] Listening on http://localhost:%d | API: /api/* | Health: /api/health\n",
+		colorGray, timestamp, colorReset, colorGreen, colorReset, port)
 }
 
 // PrintStartupInfo 打印启动信息
 func PrintStartupInfo(component string, status string) {
-	var statusIcon, statusColor string
-
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	var level string
+	var levelColor string
 	switch status {
 	case "success", "ok", "initialized":
-		statusIcon = "✓"
-		statusColor = colorGreen
+		level = "INFO "
+		levelColor = colorGreen
 	case "error", "failed":
-		statusIcon = "✗"
-		statusColor = colorRed
+		level = "ERROR"
+		levelColor = colorRed
 	case "warning":
-		statusIcon = "!"
-		statusColor = colorYellow
+		level = "WARN "
+		levelColor = colorYellow
 	default:
-		statusIcon = "•"
-		statusColor = colorCyan
+		level = "INFO "
+		levelColor = colorGreen
 	}
-
-	fmt.Printf("  %s%s%s %s\n", statusColor, statusIcon, colorReset, component)
+	fmt.Printf("%s%s%s [%s%s%s] %s\n", colorGray, timestamp, colorReset, levelColor, level, colorReset, component)
 }
 
-// PrintTable 打印表格
-func PrintTable(headers []string, rows [][]string) {
-	// 计算列宽
-	widths := make([]int, len(headers))
-	for i, h := range headers {
-		widths[i] = len(h)
-	}
-	for _, row := range rows {
-		for i, cell := range row {
-			if len(cell) > widths[i] {
-				widths[i] = len(cell)
-			}
-		}
-	}
 
-	// 打印分隔线
-	printLine := func() {
-		fmt.Print(colorCyan + "+")
-		for _, w := range widths {
-			fmt.Print(strings.Repeat("-", w+2) + "+")
-		}
-		fmt.Println(colorReset)
-	}
-
-	// 打印表头
-	printLine()
-	fmt.Print(colorCyan + "|" + colorReset)
-	for i, h := range headers {
-		fmt.Printf(" %s%-*s%s ", colorBold, widths[i], h, colorReset)
-		fmt.Print(colorCyan + "|" + colorReset)
-	}
-	fmt.Println()
-	printLine()
-
-	// 打印数据行
-	for _, row := range rows {
-		fmt.Print(colorCyan + "|" + colorReset)
-		for i, cell := range row {
-			fmt.Printf(" %-*s ", widths[i], cell)
-			fmt.Print(colorCyan + "|" + colorReset)
-		}
-		fmt.Println()
-	}
-	printLine()
-}

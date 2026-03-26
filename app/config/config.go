@@ -7,8 +7,8 @@ import (
 	"net"
 	"time"
 
-	"deploy-master/models"
-	"deploy-master/pkg/logger"
+	"cockpit/models"
+	"cockpit/pkg/logger"
 	"golang.org/x/crypto/ssh"
 )
 

@@ -88,8 +88,8 @@ Desktop.ini
 
 # ============ Go 后端 ============
 # Go 编译产物
-app/deploy-master
-app/deploy-master.exe
+app/cockpit
+app/cockpit.exe
 app/*.exe
 
 # Go 模块缓存

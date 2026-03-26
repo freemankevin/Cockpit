@@ -1,5 +1,5 @@
-// Service Worker for DeployMaster
-const CACHE_NAME = 'deploymaster-v1';
+// Service Worker for Cockpit
+const CACHE_NAME = 'cockpit-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

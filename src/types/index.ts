@@ -131,3 +131,99 @@ export interface OpenWindow {
   isMinimized: boolean; // Whether minimized
   openedAt: number;     // Open timestamp
 }
+
+// ==================== User & Auth Types ====================
+
+// User role
+export type UserRole = 'admin' | 'operator' | 'viewer';
+
+// User type
+export interface User {
+  id: number;
+  username: string;
+  role: UserRole;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  last_login_at?: string;
+  last_login_ip?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Login request
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+// Login response
+export interface LoginResponse {
+  user: User;
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+}
+
+// Refresh token request
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+// Create user request
+export interface CreateUserRequest {
+  username: string;
+  password: string;
+  role: UserRole;
+  email?: string;
+  phone?: string;
+}
+
+// Update user request
+export interface UpdateUserRequest {
+  role?: UserRole;
+  email?: string;
+  phone?: string;
+  is_active?: boolean;
+}
+
+// Update password request
+export interface UpdatePasswordRequest {
+  old_password: string;
+  new_password: string;
+}
+
+// Reset password request
+export interface ResetPasswordRequest {
+  new_password: string;
+}
+
+// Audit log type
+export interface AuditLog {
+  id: number;
+  username: string;
+  action: string;
+  resource: string;
+  resource_id: number;
+  detail: string;
+  source_ip: string;
+  status: 'success' | 'failed';
+  error_msg?: string;
+  created_at: string;
+}
+
+// Paginated response
+export interface PaginatedResponse<T> {
+  list: T[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+// API Response with code
+export interface ApiResult<T = unknown> {
+  code: number;
+  message: string;
+  data: T;
+}

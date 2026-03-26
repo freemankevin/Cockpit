@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"deploy-master/config"
-	"deploy-master/pkg/logger"
+	"cockpit/config"
+	"cockpit/pkg/logger"
 )
 
 // DownloadFile 下载文件 - 高性能流式传输

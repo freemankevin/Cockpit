@@ -15,7 +15,7 @@ import (
 )
 
 // 加密密钥 (实际应用中应从配置文件读取)
-var secretKey = []byte("deploy-master-secret-key-32b")
+var secretKey = []byte("cockpit-secret-key-32b")
 
 // EncryptPassword 加密密码
 func EncryptPassword(password string) string {

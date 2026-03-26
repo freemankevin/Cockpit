@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"deploy-master/models"
+	"cockpit/models"
 )
 
 // 进度存储

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"sync"
 
-	"deploy-master/config"
-	"deploy-master/models"
-	"deploy-master/pkg/logger"
+	"cockpit/config"
+	"cockpit/models"
+	"cockpit/pkg/logger"
 	"github.com/pkg/sftp"
 )
 

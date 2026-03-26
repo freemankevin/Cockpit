@@ -3,9 +3,9 @@ package routes
 import (
 	"net/http"
 
-	"deploy-master/config"
-	"deploy-master/database"
-	"deploy-master/models"
+	"cockpit/config"
+	"cockpit/database"
+	"cockpit/models"
 
 	"github.com/gin-gonic/gin"
 )
