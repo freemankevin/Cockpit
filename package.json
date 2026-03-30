@@ -24,8 +24,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.2.0",
-    "@tabler/icons-webfont": "^3.36.0",
     "@xterm/addon-clipboard": "^0.2.0",
     "@xterm/addon-fit": "^0.9.0",
     "@xterm/addon-unicode11": "^0.9.0",

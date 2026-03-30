@@ -14,6 +14,7 @@ import { useDialog } from './components/Dialog';
 import { hostApi } from './services/api';
 import { isAuthenticated, getCurrentUser, tokenManager } from './services/authApi';
 import type { SSHHost, CreateHostRequest, UpdateHostRequest, OpenWindow, WindowType, User } from './types';
+import { Loader2, Terminal, FolderOpen, X } from 'lucide-react';
 
 function App() {
   // Auth state
@@ -255,7 +256,7 @@ function App() {
     return (
       <div className="bg-background-primary h-screen flex items-center justify-center">
         <div className="text-text-secondary">
-          <i className="fa-solid fa-spinner fa-spin text-2xl" />
+          <Loader2 className="w-8 h-8 animate-spin" />
         </div>
       </div>
     );
@@ -361,11 +362,13 @@ function App() {
                 style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.05), 0 10px 40px -10px rgba(0,0,0,0.5)' }}>
                 {/* Icon with gradient background */}
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                  window.type === 'terminal' 
-                    ? 'bg-macos-blue' 
+                  window.type === 'terminal'
+                    ? 'bg-macos-blue'
                     : 'bg-macos-green'
                 }`}>
-                  <i className={`fa-solid ${window.type === 'terminal' ? 'fa-terminal' : 'fa-folder-open'} text-white text-sm`} />
+                  {window.type === 'terminal'
+                    ? <Terminal className="w-4 h-4 text-white" />
+                    : <FolderOpen className="w-4 h-4 text-white" />}
                 </div>
                 {/* Connection status and host info */}
                 <div 
@@ -385,7 +388,7 @@ function App() {
                   className="ml-1 w-6 h-6 rounded-full bg-macos-red/20 hover:bg-macos-red flex items-center justify-center transition-colors group/close"
                   title="Close"
                 >
-                  <i className="fa-solid fa-xmark text-[10px] text-text-tertiary group-hover/close:text-white" />
+                  <X className="w-3 h-3 text-text-tertiary group-hover/close:text-white" />
                 </button>
               </div>
             </div>

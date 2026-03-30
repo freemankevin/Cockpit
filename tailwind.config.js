@@ -19,6 +19,12 @@ export default {
           '"Arial"',
           'sans-serif'
         ],
+        heading: [
+          '"Inter Tight"',
+          '"Inter"',
+          'system-ui',
+          'sans-serif'
+        ],
         mono: [
           '"JetBrains Mono"',
           '"SF Mono"',

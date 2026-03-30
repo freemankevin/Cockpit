@@ -1,6 +1,19 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { authApi } from '../services/authApi';
 import type { LoginRequest } from '../types';
+import {
+  Box,
+  Terminal,
+  FolderOpen,
+  TrendingUp,
+  AlertCircle,
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
+  LogIn
+} from 'lucide-react';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -92,21 +105,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         {/* Left Content */}
         <div style={styles.leftContent}>
           <div style={styles.brandIcon}>
-            <i className="fa-solid fa-cube" />
+            <Box size={40} color="white" />
           </div>
           <h1 style={styles.brandTitle}>Cockpit</h1>
           <p style={styles.brandSubtitle}>Modern Server Operations Management Platform</p>
           <div style={styles.features}>
             <div style={styles.featureItem}>
-              <i className="fa-solid fa-terminal" style={{...styles.featureIcon, color: '#3b82f6'}} />
+              <Terminal size={18} color="#3b82f6" style={styles.featureIcon} />
               <span>SSH Terminal Management</span>
             </div>
             <div style={styles.featureItem}>
-              <i className="fa-solid fa-folder-open" style={{...styles.featureIcon, color: '#8b5cf6'}} />
+              <FolderOpen size={18} color="#8b5cf6" style={styles.featureIcon} />
               <span>SFTP File Transfer</span>
             </div>
             <div style={styles.featureItem}>
-              <i className="fa-solid fa-chart-line" style={{...styles.featureIcon, color: '#10b981'}} />
+              <TrendingUp size={18} color="#10b981" style={styles.featureIcon} />
               <span>System Monitoring Dashboard</span>
             </div>
           </div>
@@ -127,7 +140,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {/* Error Message */}
             {error && (
               <div style={styles.errorBanner}>
-                <i className="fa-solid fa-circle-exclamation" style={styles.errorIcon} />
+                <AlertCircle size={16} color="#ef4444" />
                 <span>{error}</span>
               </div>
             )}
@@ -136,7 +149,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <div style={styles.inputGroup}>
               <label style={styles.label}>Username</label>
               <div style={styles.inputWrapper}>
-                <i className="fa-solid fa-user" style={{...styles.inputIcon, color: '#6366f1'}} />
+                <User size={16} color="#6366f1" style={styles.inputIcon} />
                 <input
                   type="text"
                   value={username}
@@ -153,7 +166,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <div style={styles.inputGroup}>
               <label style={styles.label}>Password</label>
               <div style={styles.inputWrapper}>
-                <i className="fa-solid fa-lock" style={{...styles.inputIcon, color: '#8b5cf6'}} />
+                <Lock size={16} color="#8b5cf6" style={styles.inputIcon} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -169,7 +182,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   style={styles.passwordToggle}
                   tabIndex={-1}
                 >
-                  <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} style={{ color: '#94a3b8' }} />
+                  {showPassword ? <EyeOff size={16} color="#94a3b8" /> : <Eye size={16} color="#94a3b8" />}
                 </button>
               </div>
             </div>
@@ -185,12 +198,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             >
               {loading ? (
                 <>
-                  <i className="fa-solid fa-spinner" style={styles.loadingIcon} />
+                  <Loader2 size={16} className="animate-spin" />
                   Signing in...
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-right-to-bracket" style={styles.buttonIcon} />
+                  <LogIn size={16} />
                   Sign In
                 </>
               )}
@@ -254,7 +267,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '40px',
     border: '1px solid rgba(255,255,255,0.2)',
   },
   brandTitle: {
@@ -290,8 +302,7 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: '200px',
   },
   featureIcon: {
-    fontSize: '18px',
-    opacity: 0.9,
+    flexShrink: 0,
   },
   // 右侧面板
   rightPanel: {
@@ -340,11 +351,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#dc2626',
     fontSize: '14px',
   },
-  errorIcon: {
-    fontSize: '16px',
-    flexShrink: 0,
-    color: '#ef4444',
-  },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
@@ -363,7 +369,6 @@ const styles: Record<string, React.CSSProperties> = {
   inputIcon: {
     position: 'absolute',
     left: '14px',
-    fontSize: '16px',
     pointerEvents: 'none',
   },
   input: {
@@ -388,7 +393,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    fontSize: '16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -415,13 +419,6 @@ const styles: Record<string, React.CSSProperties> = {
   submitButtonDisabled: {
     opacity: 0.7,
     cursor: 'not-allowed',
-  },
-  buttonIcon: {
-    fontSize: '16px',
-  },
-  loadingIcon: {
-    fontSize: '16px',
-    animation: 'spin 1s linear infinite',
   },
 };
 

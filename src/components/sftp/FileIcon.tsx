@@ -1,5 +1,10 @@
+/**
+ * File Icon Component - 使用 Lucide React 图标库
+ * 根据 Railway 规范优化
+ */
 import type { SFTPFile } from '@/services/api';
-import { colors, COMPOUND_EXTS, EXT_MAP, FILENAME_MAP, type IconConfig } from './fileIconConfig';
+import { colors, COMPOUND_EXTS, EXT_MAP, FILENAME_MAP, iconComponents, type IconConfig } from './fileIconConfig';
+import type { LucideIcon } from 'lucide-react';
 
 interface FileIconProps {
   file: SFTPFile;
@@ -51,17 +56,16 @@ function getFileIconConfig(
 
   // ========== Symlink ==========
   if (isSymlink) {
-    return { icon: 'fa-link', color: colors.amber };
+    return { icon: iconComponents.Link2, color: colors.amber };
   }
 
   // ========== Directory ==========
   if (isDir) {
-    const dirIcon = isOpen ? 'fa-folder-open' : 'fa-folder';
+    const dirIcon = isOpen ? iconComponents.FolderOpen : iconComponents.Folder;
     return {
       icon: dirIcon,
       color: isHidden ? colors.gray : colors.blue,
       opacity: isHidden ? 0.5 : 0.9,
-      style: 'solid',
     };
   }
 
@@ -78,11 +82,11 @@ function getFileIconConfig(
     }
   }
 
-  // ========== Execute permission bit check (no extension executable file) ==========
+  // ========== Execute permission bit check ==========
   if (isExecutableByMode(mode)) {
     const ext = lower.split('.').pop() ?? '';
     if (!ext || !EXT_MAP[ext]) {
-      return { icon: 'fa-terminal', color: colors.teal };
+      return { icon: iconComponents.Terminal, color: colors.teal };
     }
   }
 
@@ -92,33 +96,26 @@ function getFileIconConfig(
     return EXT_MAP[ext];
   }
 
-  // ========== Hidden file (unmatched) ==========
+  // ========== Hidden file ==========
   if (isHidden) {
-    return { icon: 'fa-file', color: colors.gray, opacity: 0.5 };
+    return { icon: iconComponents.File, color: colors.gray, opacity: 0.5 };
   }
 
   // ========== Default regular file ==========
-  return { icon: 'fa-file', color: colors.gray };
+  return { icon: iconComponents.File, color: colors.gray };
 }
 
 // ============================================
 // FileIcon Component
 // ============================================
 const FileIcon = ({ file, size = 'md', isOpen = false }: FileIconProps) => {
-  const sizeClasses = {
-    sm: 'w-5 h-5',
-    md: 'w-6 h-6',
-    lg: 'w-12 h-12',
+  const sizeMap = {
+    sm: 16,
+    md: 20,
+    lg: 28,
   };
 
-  const iconSizes = {
-    sm: 'text-[15px]',
-    md: 'text-base',
-    lg: 'text-2xl',
-  };
-
-  const containerClass = sizeClasses[size];
-  const iconSizeClass = iconSizes[size];
+  const iconSize = sizeMap[size];
 
   // Get icon config
   const config = getFileIconConfig(
@@ -129,24 +126,17 @@ const FileIcon = ({ file, size = 'md', isOpen = false }: FileIconProps) => {
     file.is_link
   );
 
-  const { icon, color, opacity = 0.9, style = 'solid' } = config;
+  const { icon: IconComponent, color, opacity = 0.9 } = config;
   const isHidden = file.name.startsWith('.');
 
-  // Build complete Font Awesome class name
-  const faClass = style === 'regular' 
-    ? `fa-regular ${icon}` 
-    : `fa-solid ${icon}`;
-
   return (
-    <div className={`${containerClass} flex items-center justify-center`}>
-      <i
-        className={`${faClass} ${iconSizeClass}`}
-        style={{
-          color,
-          opacity: file.is_dir && isHidden ? 0.5 : opacity,
-        }}
-      />
-    </div>
+    <IconComponent
+      size={iconSize}
+      style={{
+        color,
+        opacity: file.is_dir && isHidden ? 0.5 : opacity,
+      }}
+    />
   );
 };
 

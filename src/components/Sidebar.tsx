@@ -1,5 +1,22 @@
 import { useState } from 'react';
 import type { User } from '../types';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Server,
+  Store,
+  Box,
+  Gauge,
+  FileText,
+  Bell,
+  Award,
+  Shield,
+  Clock,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+} from 'lucide-react';
 
 // Page types - all available pages
 export type PageType =
@@ -26,7 +43,7 @@ export type PageType =
 interface NavItem {
   id: PageType;
   label: string;
-  icon?: string; // Font Awesome icon class
+  icon?: LucideIcon; // Lucide icon component
   adminOnly?: boolean;
   isSubItem?: boolean;
 }
@@ -51,13 +68,13 @@ interface SidebarProps {
 const navigationGroups: NavGroup[] = [
   {
     items: [
-      { id: 'hosts', label: 'Hosts', icon: 'fa-solid fa-server' },
-      { id: 'appstore', label: 'Appstore', icon: 'fa-solid fa-store' },
+      { id: 'hosts', label: 'Hosts', icon: Server },
+      { id: 'appstore', label: 'Appstore', icon: Store },
     ],
   },
   {
     items: [
-      { id: 'containers', label: 'Containers', icon: 'fa-solid fa-cube' },
+      { id: 'containers', label: 'Containers', icon: Box },
     ],
     subItems: [
       { id: 'container-install', label: 'Install', isSubItem: true },
@@ -70,25 +87,25 @@ const navigationGroups: NavGroup[] = [
   },
   {
     items: [
-      { id: 'monitor', label: 'Monitor', icon: 'fa-solid fa-gauge-high' },
-      { id: 'logs', label: 'Logs', icon: 'fa-solid fa-file-lines' },
-      { id: 'alerts', label: 'Alerts', icon: 'fa-solid fa-bell' },
+      { id: 'monitor', label: 'Monitor', icon: Gauge },
+      { id: 'logs', label: 'Logs', icon: FileText },
+      { id: 'alerts', label: 'Alerts', icon: Bell },
     ],
   },
   {
     items: [
-      { id: 'certificates', label: 'Certificates', icon: 'fa-solid fa-certificate' },
-      { id: 'firewall', label: 'Firewall', icon: 'fa-solid fa-shield-halved' },
+      { id: 'certificates', label: 'Certificates', icon: Award },
+      { id: 'firewall', label: 'Firewall', icon: Shield },
     ],
   },
   {
     items: [
-      { id: 'cronjob', label: 'Cronjob', icon: 'fa-solid fa-clock' },
+      { id: 'cronjob', label: 'Cronjob', icon: Clock },
     ],
   },
   {
     items: [
-      { id: 'settings', label: 'Settings', icon: 'fa-solid fa-gear' },
+      { id: 'settings', label: 'Settings', icon: Settings },
     ],
     subItems: [
       { id: 'settings-users', label: 'Users', isSubItem: true, adminOnly: true },
@@ -196,8 +213,14 @@ const Sidebar = ({
                       }`}
           title={isCollapsed ? 'Expand' : 'Collapse'}
         >
-          <i className={`fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-xs text-text-tertiary`}></i>
-          {!isCollapsed && <span className="text-xs text-text-tertiary">Collapse</span>}
+          {isCollapsed ? (
+            <ChevronRight className="w-3 h-3 text-text-tertiary" />
+          ) : (
+            <>
+              <ChevronLeft className="w-3 h-3 text-text-tertiary" />
+              <span className="text-xs text-text-tertiary">Collapse</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -215,6 +238,7 @@ const Sidebar = ({
                 const hasSubItems = group.subItems && group.subItems.length > 0;
                 const isExpanded = expandedMenus.has(item.id);
                 const parentActive = isParentActive(item.id, group.subItems);
+                const IconComponent = item.icon;
 
                 return (
                   <div key={item.id}>
@@ -237,16 +261,20 @@ const Sidebar = ({
                           : 'text-[#a1a1aa] hover:bg-background-tertiary hover:text-[#d4d4d8]'
                         }`}
                     >
-                      {item.icon && (
-                        <i className={`${item.icon} w-[18px] h-[18px] text-center shrink-0
-                          ${parentActive ? 'text-primary' : 'text-[#71717a]'}`}></i>
+                      {IconComponent && (
+                        <IconComponent 
+                          className={`w-[18px] h-[18px] shrink-0
+                            ${parentActive ? 'text-primary' : 'text-[#71717a]'}`}
+                        />
                       )}
                       {!isCollapsed && (
                         <>
                           <span className="truncate">{item.label}</span>
                           {hasSubItems && (
-                            <i className={`fa-solid fa-chevron-down text-[10px] text-[#71717a]/40 transition-transform duration-200 shrink-0 ml-1
-                              ${isExpanded ? 'rotate-180' : ''}`}></i>
+                            <ChevronDown 
+                              className={`w-3 h-3 text-[#71717a]/40 transition-transform duration-200 shrink-0 ml-1
+                                ${isExpanded ? 'rotate-180' : ''}`}
+                            />
                           )}
                         </>
                       )}
@@ -335,7 +363,7 @@ const Sidebar = ({
                        transition-all duration-200 opacity-0 group-hover:opacity-100"
               title="Sign Out"
             >
-              <i className="fa-solid fa-right-from-bracket w-4 h-4"></i>
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         )}
