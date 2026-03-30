@@ -22,20 +22,20 @@ import Checkbox from '../Checkbox';
 import { formatMemory, getSystemDisk, getDiskTextColor, bytesToGB } from './types';
 import type { HostListItemProps } from './types';
 
-// Default column widths fallback
+// Default column widths fallback - Railway 风格优化
 const defaultWidths = {
-  checkbox: 36,
+  checkbox: 40,
   id: 140,
-  hostName: 160,
-  status: 80,
-  specs: 100,
-  swap: 60,
-  arch: 70,
-  kernel: 200,
-  os: 80,
-  ip: 140,
-  disk: 180,
-  actions: 200,
+  hostName: 180,
+  status: 100,
+  specs: 120,
+  swap: 80,
+  arch: 80,
+  kernel: 220,
+  os: 100,
+  ip: 160,
+  disk: 200,
+  actions: 180,
 };
 
 export const HostListItem = ({
@@ -77,17 +77,19 @@ export const HostListItem = ({
         <div className="flex items-center justify-center shrink-0" style={{ width: widths.checkbox, padding: '12px 8px 12px 12px' }}>
           <Checkbox checked={isSelected} onChange={onSelect} />
         </div>
-        <div className="flex items-center shrink-0 overflow-hidden" style={{ width: widths.id, padding: '12px' }}>
-          <span 
+        {/* ID - Hidden */}
+        <div className="flex items-center shrink-0 overflow-hidden hidden" style={{ width: widths.id, padding: '12px' }}>
+          <span
             className="text-xs truncate"
             style={{ color: 'var(--text-primary)' }}
           >
             {host.host_id}
           </span>
         </div>
+        {/* Host Name - 显示 */}
         <div className="flex items-center shrink-0 overflow-hidden" style={{ width: widths.hostName, padding: '12px' }}>
           <div className="flex items-center gap-1.5 group/copy min-w-0">
-            <span 
+            <span
               className="text-xs truncate"
               style={{ color: 'var(--text-primary)' }}
             >
@@ -101,8 +103,8 @@ export const HostListItem = ({
               {copiedField === `host-${host.id}-name` ? (
                 <Check className="w-3 h-3" style={{ color: 'var(--color-success)' }} />
               ) : (
-                <Copy 
-                  className="w-3 h-3" 
+                <Copy
+                  className="w-3 h-3"
                   style={{ color: 'var(--text-tertiary)' }}
                   onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
                   onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
@@ -111,19 +113,21 @@ export const HostListItem = ({
             </button>
           </div>
         </div>
+        {/* Status - 显示 */}
         <div className="flex items-center shrink-0 overflow-hidden" style={{ width: widths.status, padding: '12px' }}>
           <StatusBadge status={host.status} />
         </div>
         <div className="flex items-center shrink-0 overflow-hidden" style={{ width: widths.specs, padding: '12px' }}>
-          <span 
+          <span
             className="text-xs whitespace-nowrap"
             style={{ color: 'var(--text-primary)' }}
           >
             {host.cpu_cores ? `${host.cpu_cores} Cores ` : ''}{formatMemory(host.memory_gb)}
           </span>
         </div>
-        <div className="flex items-center shrink-0 overflow-hidden" style={{ width: widths.swap, padding: '12px' }}>
-          <span 
+        {/* Swap - Hidden */}
+        <div className="flex items-center shrink-0 overflow-hidden hidden" style={{ width: widths.swap, padding: '12px' }}>
+          <span
             className="text-xs"
             style={{ color: 'var(--text-primary)' }}
           >
@@ -138,9 +142,10 @@ export const HostListItem = ({
             {host.architecture || '-'}
           </span>
         </div>
-        <div className="flex items-center shrink-0 overflow-hidden" style={{ width: widths.kernel, padding: '12px' }}>
+        {/* Kernel - Hidden */}
+        <div className="flex items-center shrink-0 overflow-hidden hidden" style={{ width: widths.kernel, padding: '12px' }}>
           <div className="flex items-center gap-1.5 group/copy min-w-0">
-            <span 
+            <span
               className="text-xs font-mono truncate"
               style={{ color: 'var(--text-primary)' }}
               title={host.kernel_version || ''}
@@ -156,7 +161,7 @@ export const HostListItem = ({
                 {copiedField === `host-${host.id}-kernel` ? (
                   <Check className="w-3 h-3" style={{ color: 'var(--color-success)' }} />
                 ) : (
-                  <Copy 
+                  <Copy
                     className="w-3 h-3"
                     style={{ color: 'var(--text-tertiary)' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
@@ -198,43 +203,43 @@ export const HostListItem = ({
         </div>
         <div className="flex items-center shrink-0 overflow-hidden" style={{ width: widths.disk, padding: '12px' }}>
           {systemDisk ? (
-            <div 
+            <div
               className="flex items-center gap-2 cursor-pointer w-full"
-              onClick={() => host.disks && host.disks.length > 1 && onToggleExpand()}
+              onClick={() => host.disks && host.disks.length > 0 && onToggleExpand()}
             >
               <div className="flex-1 min-w-0 w-full">
                 <div className="flex items-center justify-between mb-1">
-                  <span 
+                  <span
                     className="text-xs"
                     style={{ color: 'var(--text-primary)' }}
                   >
                     {systemDisk.mount_point === '/' ? 'System Disk' : systemDisk.mount_point}
                   </span>
-                  <span 
+                  <span
                     className="text-xs font-medium"
-                    style={{ 
-                      color: systemDisk.usage > 90 
-                        ? 'var(--color-error)' 
-                        : systemDisk.usage > 70 
-                          ? 'var(--color-warning)' 
-                          : 'var(--color-success)' 
+                    style={{
+                      color: systemDisk.usage > 90
+                        ? 'var(--color-error)'
+                        : systemDisk.usage > 70
+                          ? 'var(--color-warning)'
+                          : 'var(--color-success)'
                     }}
                   >
                     {systemDisk.usage.toFixed(0)}%
                   </span>
                 </div>
                 <DiskProgressBar usage={systemDisk.usage} className="w-full" />
-                <div 
+                <div
                   className="text-[10px] mt-0.5"
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   {bytesToGB(systemDisk.used)}G / {bytesToGB(systemDisk.total)}G
                 </div>
               </div>
-              {host.disks && host.disks.length > 1 && (
-                <ChevronRight 
+              {host.disks && host.disks.length > 0 && (
+                <ChevronRight
                   className="w-4 h-4 transition-transform shrink-0"
-                  style={{ 
+                  style={{
                     color: 'var(--text-tertiary)',
                     transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                   }}

@@ -10,21 +10,24 @@ import { useHostsGrid } from './useHostsGrid';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import type { HostsGridProps, ColumnWidths } from './types';
 
-// Default column widths
+// Default column widths - Railway 风格优化
 const defaultColumnWidths: ColumnWidths = {
-  checkbox: 36,
+  checkbox: 40,
   id: 140,
-  hostName: 160,
-  status: 80,
-  specs: 100,
-  swap: 60,
-  arch: 70,
-  kernel: 200,
-  os: 80,
-  ip: 140,
-  disk: 180,
-  actions: 200,
+  hostName: 180,
+  status: 100,
+  specs: 120,
+  swap: 80,
+  arch: 80,
+  kernel: 220,
+  os: 100,
+  ip: 160,
+  disk: 200,
+  actions: 180,
 };
+
+// Hidden columns (保留用于导出，UI 中隐藏)
+const hiddenColumns = ['id', 'swap', 'kernel'];
 
 const HostsGrid = ({
   hosts,
@@ -210,7 +213,7 @@ const HostsGrid = ({
       {/* List view - Dark Mode with horizontal scroll */}
       <div className="bg-background-secondary rounded-lg border border-border-primary overflow-hidden">
         <div className="overflow-x-auto">
-          {/* Table header with resize handles */}
+          {/* Table header */}
           <div className="flex bg-background-tertiary border-b border-border-primary text-xs" style={{ minWidth: Object.values(colWidths).reduce((a, b) => a + b, 0) }}>
           {/* Checkbox */}
           <div className="relative flex items-center justify-center shrink-0" style={{ width: colWidths.checkbox }}>
@@ -219,21 +222,21 @@ const HostsGrid = ({
             </div>
             <div {...getResizeHandleProps('checkbox')}><div {...getResizeIndicatorProps('checkbox')} /></div>
           </div>
-          {/* ID */}
-          <div className="relative flex items-center shrink-0" style={{ width: colWidths.id }}>
+          {/* ID - Hidden */}
+          <div className="relative flex items-center shrink-0 hidden" style={{ width: colWidths.id }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
-              <span className="font-semibold text-text-secondary">ID</span>
+              <span className="font-medium text-text-tertiary uppercase tracking-wide">ID</span>
             </div>
             <div {...getResizeHandleProps('id')}><div {...getResizeIndicatorProps('id')} /></div>
           </div>
-          {/* Host Name */}
+          {/* Host Name - 显示 */}
           <div className="relative flex items-center shrink-0" style={{ width: colWidths.hostName }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
-              <span className="font-semibold text-text-secondary">Host Name</span>
+              <span className="font-medium text-text-tertiary uppercase tracking-wide">Host Name</span>
             </div>
             <div {...getResizeHandleProps('hostName')}><div {...getResizeIndicatorProps('hostName')} /></div>
           </div>
-          {/* Status */}
+          {/* Status - 显示 */}
           <div className="relative flex items-center shrink-0" style={{ width: colWidths.status }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
               <FilterDropdown column="Status" options={statusOptions} selectedValues={statusFilter} onChange={setStatusFilter} />
@@ -243,14 +246,14 @@ const HostsGrid = ({
           {/* Specs */}
           <div className="relative flex items-center shrink-0" style={{ width: colWidths.specs }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
-              <span className="font-semibold text-text-secondary">Specs</span>
+              <span className="font-medium text-text-tertiary uppercase tracking-wide">Specs</span>
             </div>
             <div {...getResizeHandleProps('specs')}><div {...getResizeIndicatorProps('specs')} /></div>
           </div>
-          {/* Swap */}
-          <div className="relative flex items-center shrink-0" style={{ width: colWidths.swap }}>
+          {/* Swap - Hidden */}
+          <div className="relative flex items-center shrink-0 hidden" style={{ width: colWidths.swap }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
-              <span className="font-semibold text-text-secondary">Swap</span>
+              <span className="font-medium text-text-tertiary uppercase tracking-wide">Swap</span>
             </div>
             <div {...getResizeHandleProps('swap')}><div {...getResizeIndicatorProps('swap')} /></div>
           </div>
@@ -261,10 +264,10 @@ const HostsGrid = ({
             </div>
             <div {...getResizeHandleProps('arch')}><div {...getResizeIndicatorProps('arch')} /></div>
           </div>
-          {/* Kernel */}
-          <div className="relative flex items-center shrink-0" style={{ width: colWidths.kernel }}>
+          {/* Kernel - Hidden */}
+          <div className="relative flex items-center shrink-0 hidden" style={{ width: colWidths.kernel }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
-              <span className="font-semibold text-text-secondary">Kernel</span>
+              <span className="font-medium text-text-tertiary uppercase tracking-wide">Kernel</span>
             </div>
             <div {...getResizeHandleProps('kernel')}><div {...getResizeIndicatorProps('kernel')} /></div>
           </div>
@@ -278,21 +281,21 @@ const HostsGrid = ({
           {/* IPv4 Address */}
           <div className="relative flex items-center shrink-0" style={{ width: colWidths.ip }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
-              <span className="font-semibold text-text-secondary">IP</span>
+              <span className="font-medium text-text-tertiary uppercase tracking-wide">IP</span>
             </div>
             <div {...getResizeHandleProps('ip')}><div {...getResizeIndicatorProps('ip')} /></div>
           </div>
           {/* Disk */}
           <div className="relative flex items-center shrink-0" style={{ width: colWidths.disk }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
-              <span className="font-semibold text-text-secondary">Disk</span>
+              <span className="font-medium text-text-tertiary uppercase tracking-wide">Disk</span>
             </div>
             <div {...getResizeHandleProps('disk')}><div {...getResizeIndicatorProps('disk')} /></div>
           </div>
           {/* Actions - no resize handle for last column */}
           <div className="relative flex items-center shrink-0" style={{ width: colWidths.actions }}>
             <div className="flex-1 px-2 py-2.5 flex items-center">
-              <span className="font-semibold text-text-secondary">Actions</span>
+              <span className="font-medium text-text-tertiary uppercase tracking-wide">Actions</span>
             </div>
           </div>
         </div>

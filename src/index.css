@@ -14,6 +14,13 @@
   --bg-surface: #141518;
   --bg-elevated: #1C1E21;
   --bg-overlay: #242629;
+  --bg-hover: #1C1E21;
+
+  /* 兼容旧变量名 */
+  --background-primary: #0B0D0F;
+  --background-secondary: #141518;
+  --background-tertiary: #1C1E21;
+  --background-hover: #242629;
 
   /* 文字层级 */
   --text-primary: #EFEFEF;
@@ -21,15 +28,28 @@
   --text-tertiary: #636363;
   --text-disabled: #3D3F42;
 
-  /* 边框 - 白色低透明度 */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  /* 边框层级 - 更微妙的分割线 */
+  --border-primary: rgba(255, 255, 255, 0.04);
+  --border-secondary: rgba(255, 255, 255, 0.06);
+  --border-tertiary: rgba(255, 255, 255, 0.10);
+
+  /* 幽灵边框 - Ghost Border (更低调的透明度) */
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.10);
 
   /* Accent 色（品牌色） */
   --accent: #A855F7;
   --accent-hover: #9333EA;
   --accent-muted: rgba(168, 85, 247, 0.15);
+
+  /* macOS 风格颜色 */
+  --macos-blue: #0A84FF;
+  --macos-green: #30D158;
+  --macos-purple: #A855F7;
+  --macos-red: #FF453A;
+  --macos-yellow: #FFD60A;
+  --macos-orange: #FF9F0A;
 
   /* 语义色 */
   --color-success: #4ADE80;
@@ -875,3 +895,46 @@ code {
 .card-stagger-4 { animation-delay: 0.12s; }
 .card-stagger-5 { animation-delay: 0.15s; }
 .card-stagger-6 { animation-delay: 0.18s; }
+
+/* ============================================
+   Tailwind 扩展 - 确保类名生效
+   ============================================ */
+/* 背景色 */
+.bg-bg-base { background-color: var(--bg-base); }
+.bg-bg-surface { background-color: var(--bg-surface); }
+.bg-bg-elevated { background-color: var(--bg-elevated); }
+.bg-bg-overlay { background-color: var(--bg-overlay); }
+.bg-bg-hover { background-color: var(--bg-hover); }
+
+.bg-background-primary { background-color: var(--background-primary); }
+.bg-background-secondary { background-color: var(--background-secondary); }
+.bg-background-tertiary { background-color: var(--background-tertiary); }
+.bg-background-hover { background-color: var(--background-hover); }
+
+/* 文字颜色 */
+.text-text-primary { color: var(--text-primary); }
+.text-text-secondary { color: var(--text-secondary); }
+.text-text-tertiary { color: var(--text-tertiary); }
+.text-text-disabled { color: var(--text-disabled); }
+
+/* 边框颜色 */
+.border-border-primary { border-color: var(--border-primary); }
+.border-border-secondary { border-color: var(--border-secondary); }
+.border-border-tertiary { border-color: var(--border-tertiary); }
+
+/* macOS 风格 */
+.bg-macos-blue { background-color: var(--macos-blue); }
+.text-macos-blue { color: var(--macos-blue); }
+.bg-macos-green { background-color: var(--macos-green); }
+.text-macos-green { color: var(--macos-green); }
+.bg-macos-purple { background-color: var(--macos-purple); }
+.text-macos-purple { color: var(--macos-purple); }
+.bg-macos-red { background-color: var(--macos-red); }
+.text-macos-red { color: var(--macos-red); }
+.bg-macos-yellow { background-color: var(--macos-yellow); }
+.text-macos-yellow { color: var(--macos-yellow); }
+.bg-macos-orange { background-color: var(--macos-orange); }
+.text-macos-orange { color: var(--macos-orange); }
+
+/* 边框样式 */
+.border-macos-blue { border-color: var(--macos-blue); }

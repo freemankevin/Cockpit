@@ -52,6 +52,14 @@ export default {
           hover: '#1C1E21',      // hover 状态（与 elevated 相同）
         },
 
+        // 兼容旧类名：background-* 系列
+        background: {
+          primary: '#0B0D0F',    // 页面底色
+          secondary: '#141518',  // 侧边栏、导航背景
+          tertiary: '#1C1E21',   // 卡片、表格背景
+          hover: '#242629',      // hover 状态背景
+        },
+
         // 文字层级 - 高对比度，清晰易读
         text: {
           primary: '#EFEFEF',    // 主要内容、标题
@@ -60,12 +68,17 @@ export default {
           disabled: '#3D3F42',   // 禁用状态
         },
 
-        // 边框 - 白色低透明度，微妙区分层次
+        // 边框层级
         border: {
-          subtle: 'rgba(255, 255, 255, 0.06)',   // 默认分割线
-          default: 'rgba(255, 255, 255, 0.10)',  // 卡片边框
-          strong: 'rgba(255, 255, 255, 0.16)',   // 交互 hover 边框
+          primary: 'rgba(255, 255, 255, 0.08)',   // 主边框
+          secondary: 'rgba(255, 255, 255, 0.12)', // 次边框
+          tertiary: 'rgba(255, 255, 255, 0.18)',  // hover 边框
         },
+
+        // 幽灵边框 - Ghost Border (0.12 魔法透明度)
+        'border-subtle': 'rgba(255, 255, 255, 0.08)',
+        'border-default': 'rgba(255, 255, 255, 0.12)',
+        'border-strong': 'rgba(255, 255, 255, 0.18)',
 
         // Accent 色（品牌色）- 仅用于主要 CTA 按钮、选中状态
         accent: {
@@ -112,6 +125,16 @@ export default {
           offline: '#F87171',
         },
 
+        // macOS 风格颜色（兼容旧代码）
+        macos: {
+          blue: '#0A84FF',       // macOS 蓝色
+          green: '#30D158',      // macOS 绿色
+          purple: '#A855F7',     // macOS 紫色（与 accent 相同）
+          red: '#FF453A',        // macOS 红色
+          yellow: '#FFD60A',     // macOS 黄色
+          orange: '#FF9F0A',     // macOS 橙色
+        },
+
         // 间距 Token
         space: {
           '1': '4px',
@@ -135,6 +158,13 @@ export default {
         'focus': '0 0 0 3px rgba(168, 85, 247, 0.2)',
         'focus-error': '0 0 0 3px rgba(248, 113, 113, 0.2)',
         'focus-success': '0 0 0 3px rgba(74, 222, 128, 0.2)',
+        // macOS 风格阴影（兼容旧代码）
+        'macos-button': '0 1px 2px rgba(0, 0, 0, 0.3)',
+        'macos-button-active': '0 1px 1px rgba(0, 0, 0, 0.2)',
+        'macos-input': '0 1px 2px rgba(0, 0, 0, 0.2)',
+        'macos-input-focus': '0 0 0 3px rgba(10, 132, 255, 0.3)',
+        'glow-blue': '0 0 8px rgba(10, 132, 255, 0.4)',
+        'glow-purple': '0 0 8px rgba(168, 85, 247, 0.4)',
       },
       borderRadius: {
         'sm': '8px',     // 小组件
@@ -182,6 +212,7 @@ export default {
       },
       transitionTimingFunction: {
         'ease-out': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'macos': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
       },
       backdropBlur: {
         'xs': '2px',
