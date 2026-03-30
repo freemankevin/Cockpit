@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import Sidebar from './components/Sidebar';
+import Sidebar, { type PageType } from './components/Sidebar';
 import Header from './components/Header';
 import { HostsGrid } from './components/HostsGrid';
 import AddHostModal from './components/AddHostModal';
@@ -7,15 +7,13 @@ import TerminalModal from './components/TerminalModal';
 import SFTPModal from './components/SFTPModal';
 import LoginPage from './components/LoginPage';
 import UserManagement from './components/UserManagement';
+import PlaceholderPage from './components/PlaceholderPage';
 import { ToastContainer } from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { useDialog } from './components/Dialog';
 import { hostApi } from './services/api';
 import { isAuthenticated, getCurrentUser, tokenManager } from './services/authApi';
 import type { SSHHost, CreateHostRequest, UpdateHostRequest, OpenWindow, WindowType, User } from './types';
-
-// Page type for navigation
-type PageType = 'hosts' | 'users';
 
 function App() {
   // Auth state
@@ -271,8 +269,7 @@ function App() {
   return (
     <div className="bg-background-primary text-text-primary h-screen overflow-hidden flex m-0 p-0">
       {/* Sidebar */}
-      <Sidebar 
-        hostCount={hosts.length} 
+      <Sidebar
         currentPage={currentPage}
         onPageChange={setCurrentPage}
         currentUser={currentUser}
@@ -291,9 +288,7 @@ function App() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6 relative z-10">
-          {currentPage === 'users' ? (
-            <UserManagement currentUser={currentUser} />
-          ) : (
+          {currentPage === 'hosts' ? (
             <HostsGrid
               hosts={hosts}
               loading={loading}
@@ -306,6 +301,10 @@ function App() {
               onCopyHost={handleCopyHost}
               onRefresh={loadHosts}
             />
+          ) : currentPage === 'settings-users' ? (
+            <UserManagement currentUser={currentUser} />
+          ) : (
+            <PlaceholderPage page={currentPage} />
           )}
         </div>
       </main>

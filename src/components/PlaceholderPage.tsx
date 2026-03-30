@@ -36,7 +36,8 @@ export type PageType =
   | 'cronjob'
   | 'settings'
   | 'settings-users'
-  | 'settings-audit';
+  | 'settings-audit'
+  | 'settings-about';
 
 interface PlaceholderPageProps {
   page: PageType;
@@ -61,6 +62,7 @@ const pageTitles: Record<PageType, string> = {
   'settings': 'Settings',
   'settings-users': 'User Management',
   'settings-audit': 'Audit Logs',
+  'settings-about': 'About',
 };
 
 // Page descriptions mapping
@@ -82,6 +84,7 @@ const pageDescriptions: Record<PageType, string> = {
   'settings': 'System settings and configuration',
   'settings-users': 'Manage users and permissions',
   'settings-audit': 'View operation audit logs',
+  'settings-about': 'About Cockpit',
 };
 
 // Icon mapping using Lucide
@@ -103,6 +106,7 @@ const pageIcons: Record<PageType, React.ComponentType<{ className?: string }>> =
   'settings': Settings,
   'settings-users': Users,
   'settings-audit': ClipboardList,
+  'settings-about': Server,
 };
 
 const PlaceholderPage = ({ page }: PlaceholderPageProps) => {
