@@ -1,4 +1,5 @@
 import React from 'react';
+import { FolderOpen, X } from 'lucide-react';
 import { LoadingOverlay, ErrorOverlay } from './Dialogs';
 
 interface MinimizedViewProps {
@@ -34,7 +35,7 @@ export const MinimizedView: React.FC<MinimizedViewProps> = ({
             style={{ boxShadow: '0 0 0 1px rgba(139, 92, 246, 0.05), 0 10px 40px -10px rgba(0,0,0,0.5)' }}>
             {/* SFTP Icon with solid color matching card */}
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <i className="fa-solid fa-folder-open text-white text-sm" />
+              <FolderOpen className="w-4 h-4 text-white" />
             </div>
             
             {/* Connection status and host info */}
@@ -65,7 +66,7 @@ export const MinimizedView: React.FC<MinimizedViewProps> = ({
               className="ml-1 w-6 h-6 rounded-full bg-status-error/20 hover:bg-status-error flex items-center justify-center transition-colors group/close shrink-0"
               title="Close"
             >
-              <i className="fa-solid fa-xmark text-[10px] text-text-tertiary group-hover/close:text-white" />
+              <X className="w-[10px] h-[10px] text-text-tertiary group-hover/close:text-white" />
             </button>
           </div>
         </div>

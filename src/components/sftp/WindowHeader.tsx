@@ -1,4 +1,15 @@
 import React from 'react';
+import {
+  X,
+  Minus,
+  Plus,
+  Home,
+  Filter,
+  FolderPlus,
+  Upload,
+  ChevronDown,
+  ArrowLeftRight,
+} from 'lucide-react';
 import type { SFTPFile } from '@/services/api';
 import type { LogFilter } from './types';
 import { FileUploadIcon, FolderUploadIcon } from './Icons';
@@ -87,7 +98,7 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
           }}
           title="Close"
         >
-          <i className="fa-solid fa-xmark text-[9px] text-[#8b0000] opacity-0 group-hover:opacity-100 transition-opacity" />
+          <X className="w-[9px] h-[9px] text-[#8b0000] opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
         <button
           onClick={onMinimize}
@@ -98,7 +109,7 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
           }}
           title="Minimize"
         >
-          <i className="fa-solid fa-minus text-[9px] text-[#8b6914] opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Minus className="w-[9px] h-[9px] text-[#8b6914] opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
         <button
           onClick={onMaximize}
@@ -109,7 +120,7 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
           }}
           title={isMaximized ? "Restore" : "Maximize"}
         >
-          <i className="fa-solid fa-plus text-[8px] text-[#1a5c1a] opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Plus className="w-[8px] h-[8px] text-[#1a5c1a] opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       </div>
 
@@ -136,7 +147,7 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
             className="text-macos-blue hover:text-macos-blue/80 mr-2 flex items-center transition-colors"
             title="Go to root directory"
           >
-            <i className="fa-solid fa-house text-xs" />
+            <Home className="w-3 h-3" />
           </button>
           {pathSegments.map((segment) => (
             <span key={segment.path} className="flex items-center text-xs">
@@ -160,7 +171,7 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
             className="flex items-center gap-1 px-2 py-1 text-xs text-text-tertiary hover:text-white hover:bg-white/[0.06] rounded-md transition-colors"
             title="Filter files"
           >
-            <i className="fa-solid fa-filter text-[11px]" />
+            <Filter className="w-[11px] h-[11px]" />
             <span>Filter</span>
           </button>
         )}
@@ -170,7 +181,7 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
           className="flex items-center gap-1 px-2 py-1 text-xs text-text-tertiary hover:text-white hover:bg-white/[0.06] rounded-md transition-colors"
           title="Create new folder"
         >
-          <i className="fa-solid fa-folder-plus text-[11px]" />
+          <FolderPlus className="w-[11px] h-[11px]" />
           <span>New</span>
         </button>
 
@@ -181,9 +192,9 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
             className="flex items-center gap-1 px-2 py-1 text-xs text-text-tertiary hover:text-white hover:bg-white/[0.06] rounded-md transition-colors"
             title="Upload files or folder"
           >
-            <i className="fa-solid fa-upload text-[11px]" />
+            <Upload className="w-[11px] h-[11px]" />
             <span>Upload</span>
-            <i className="fa-solid fa-chevron-down text-[8px] ml-0.5" />
+            <ChevronDown className="w-[8px] h-[8px] ml-0.5" />
           </button>
           
           {showUploadMenu && (
@@ -223,7 +234,7 @@ export const WindowHeader: React.FC<WindowHeaderProps> = ({
           }`}
           title="Transfer history"
         >
-          <i className="fa-solid fa-right-left text-[11px]" />
+          <ArrowLeftRight className="w-[11px] h-[11px]" />
           <span>Transfer</span>
           {activeTransfers > 0 && (
             <span className="w-1.5 h-1.5 rounded-full bg-macos-blue animate-pulse" />

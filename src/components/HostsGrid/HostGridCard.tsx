@@ -1,4 +1,15 @@
 import { useState } from 'react';
+import {
+  HardDrive,
+  Folder,
+  Database,
+  AlertTriangle,
+  Cpu,
+  Monitor,
+  ChevronUp,
+  Terminal,
+  FolderOpen,
+} from 'lucide-react';
 import OSIcon, { getOSLabel } from '../OSIcon';
 import StatusBadge from './StatusBadge';
 import DiskProgressBar from './DiskProgressBar';
@@ -29,7 +40,7 @@ export const HostGridCard = ({
         >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <i className={`fa-solid fa-hard-drive w-4 h-4 ${isUnmounted ? 'text-text-tertiary' : isSystemDisk ? 'text-macos-blue' : 'text-text-secondary'}`}></i>
+              <HardDrive className={`w-4 h-4 ${isUnmounted ? 'text-text-tertiary' : isSystemDisk ? 'text-macos-blue' : 'text-text-secondary'}`} />
               <span className="text-xs font-medium text-text-secondary">
                 {isUnmounted ? 'Unmounted' : isSystemDisk ? 'System' : 'Data'}
               </span>
@@ -47,20 +58,20 @@ export const HostGridCard = ({
             </span>
           </div>
           {disk.mount_point && (
-            <div className="mt-1.5 text-[10px] text-text-tertiary truncate">
-              <i className="fa-solid fa-folder text-[8px] mr-1 text-macos-orange"></i>
+            <div className="mt-1.5 text-[10px] text-text-tertiary truncate flex items-center gap-1">
+              <Folder className="w-3 h-3 text-macos-orange" />
               {disk.mount_point}
             </div>
           )}
           {disk.fs_type && (
-            <div className="text-[10px] text-text-tertiary truncate">
-              <i className="fa-solid fa-database text-[8px] mr-1 text-macos-purple"></i>
+            <div className="text-[10px] text-text-tertiary truncate flex items-center gap-1">
+              <Database className="w-3 h-3 text-macos-purple" />
               {disk.fs_type}
             </div>
           )}
           {isUnmounted && (
-            <div className="mt-1.5 text-[10px] text-macos-orange truncate">
-              <i className="fa-solid fa-triangle-exclamation text-[8px] mr-1"></i>
+            <div className="mt-1.5 text-[10px] text-macos-orange truncate flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
               Unmounted or Unformatted
             </div>
           )}
@@ -98,15 +109,15 @@ export const HostGridCard = ({
       {/* Specifications */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="flex items-center gap-2 text-xs text-text-secondary">
-          <i className="fa-solid fa-microchip w-3.5 h-3.5 text-macos-blue"></i>
+          <Cpu className="w-3.5 h-3.5 text-macos-blue" />
           <span>{host.cpu_cores || '-'} Cores {formatMemory(host.memory_gb)} {host.architecture || ''}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-text-secondary">
-          <i className="fa-solid fa-hard-drive w-3.5 h-3.5 text-macos-orange"></i>
+          <HardDrive className="w-3.5 h-3.5 text-macos-orange" />
           <span>{host.disks?.length || '-'} Disks</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-text-secondary">
-          <i className="fa-solid fa-desktop w-3.5 h-3.5 text-macos-purple"></i>
+          <Monitor className="w-3.5 h-3.5 text-macos-purple" />
           <span>{getOSLabel(host.os_key, host.system_type)}</span>
         </div>
       </div>
@@ -121,7 +132,7 @@ export const HostGridCard = ({
           >
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <i className={`fa-solid fa-hard-drive w-3.5 h-3.5 ${systemDisk.mount_point === '/' ? 'text-macos-blue' : 'text-text-secondary'}`}></i>
+                <HardDrive className={`w-3.5 h-3.5 ${systemDisk.mount_point === '/' ? 'text-macos-blue' : 'text-text-secondary'}`} />
                 <span className="text-xs text-text-secondary">
                   {systemDisk.mount_point === '/' ? 'System Disk' : systemDisk.mount_point}
                 </span>
@@ -152,7 +163,7 @@ export const HostGridCard = ({
                   }}
                   className="text-xs text-text-tertiary hover:text-text-primary"
                 >
-                  <i className="fa-solid fa-chevron-up"></i>
+                  <ChevronUp className="w-3 h-3" />
                 </button>
               </div>
               <div className="grid grid-cols-1 gap-2">
@@ -173,7 +184,7 @@ export const HostGridCard = ({
                    shadow-macos-button hover:shadow-glow-blue
                    active:scale-[0.98]"
         >
-          <i className="fa-solid fa-terminal w-3.5 h-3.5"></i>
+          <Terminal className="w-3.5 h-3.5" />
           Terminal
         </button>
         <button
@@ -183,7 +194,7 @@ export const HostGridCard = ({
                    flex items-center justify-center gap-1.5
                    border border-border-primary hover:border-border-tertiary"
         >
-          <i className="fa-solid fa-folder-open w-3.5 h-3.5 text-macos-green"></i>
+          <FolderOpen className="w-3.5 h-3.5 text-macos-green" />
           SFTP
         </button>
       </div>

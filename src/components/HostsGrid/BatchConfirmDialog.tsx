@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import { X, Server } from 'lucide-react';
 import type { SSHHost } from '@/types';
 
 interface BatchConfirmDialogProps {
@@ -39,7 +40,7 @@ export const BatchConfirmDialog = ({
             onClick={onCancel}
             className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-background-hover transition-colors"
           >
-            <i className="fa-solid fa-xmark text-text-tertiary text-xs hover:text-text-secondary"></i>
+            <X className="w-3 h-3 text-text-tertiary hover:text-text-secondary" />
           </button>
         </div>
 
@@ -55,7 +56,7 @@ export const BatchConfirmDialog = ({
             <div className="divide-y divide-border-tertiary">
               {hosts.map((host) => (
                 <div key={host.id} className="px-3 py-2 flex items-center gap-2">
-                  <i className="fa-solid fa-server text-primary text-[10px]"></i>
+                  <Server className="w-[10px] h-[10px] text-primary" />
                   <span className="text-xs text-text-primary font-medium">{host.name}</span>
                   <span className="text-xs text-text-tertiary">({host.address})</span>
                 </div>

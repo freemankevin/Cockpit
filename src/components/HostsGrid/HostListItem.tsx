@@ -1,4 +1,19 @@
 import { useRef } from 'react';
+import {
+  Check,
+  Copy,
+  ChevronRight,
+  ChevronUp,
+  Terminal,
+  FolderOpen,
+  MoreVertical,
+  HardDrive,
+  Tag,
+  AlertTriangle,
+  Folder,
+  Layers,
+  Info,
+} from 'lucide-react';
 import OSIcon, { getOSLabel } from '../OSIcon';
 import StatusBadge from './StatusBadge';
 import DiskProgressBar from './DiskProgressBar';
@@ -69,9 +84,9 @@ export const HostListItem = ({
               title="Copy"
             >
               {copiedField === `host-${host.id}-name` ? (
-                <i className="fa-solid fa-check text-xs text-macos-green"></i>
+                <Check className="w-3 h-3 text-macos-green" />
               ) : (
-                <i className="fa-regular fa-copy text-xs text-text-tertiary hover:text-white"></i>
+                <Copy className="w-3 h-3 text-text-tertiary hover:text-white" />
               )}
             </button>
           </div>
@@ -100,9 +115,9 @@ export const HostListItem = ({
                 title="Copy"
               >
                 {copiedField === `host-${host.id}-kernel` ? (
-                  <i className="fa-solid fa-check text-xs text-macos-green"></i>
+                  <Check className="w-3 h-3 text-macos-green" />
                 ) : (
-                  <i className="fa-regular fa-copy text-xs text-text-tertiary hover:text-white"></i>
+                  <Copy className="w-3 h-3 text-text-tertiary hover:text-white" />
                 )}
               </button>
             )}
@@ -120,9 +135,9 @@ export const HostListItem = ({
               title="Copy"
             >
               {copiedField === `host-${host.id}-ip` ? (
-                <i className="fa-solid fa-check text-xs text-macos-green"></i>
+                <Check className="w-3 h-3 text-macos-green" />
               ) : (
-                <i className="fa-regular fa-copy text-xs text-text-tertiary hover:text-white"></i>
+                <Copy className="w-3 h-3 text-text-tertiary hover:text-white" />
               )}
             </button>
           </div>
@@ -139,7 +154,7 @@ export const HostListItem = ({
                 <div className="text-[10px] text-text-secondary mt-0.5">{bytesToGB(systemDisk.used)}G / {bytesToGB(systemDisk.total)}G</div>
               </div>
               {host.disks && host.disks.length > 1 && (
-                <i className={`fa-solid fa-chevron-right w-4 h-4 text-text-tertiary transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`}></i>
+                <ChevronRight className={`w-4 h-4 text-text-tertiary transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
               )}
             </div>
           ) : (
@@ -151,14 +166,14 @@ export const HostListItem = ({
             onClick={onOpenTerminal}
             className="px-2.5 py-1.5 bg-macos-blue text-white rounded-lg text-xs font-medium transition-all duration-200 ease-macos shadow-macos-button hover:brightness-110 hover:shadow-glow-blue active:shadow-macos-button-active active:scale-[0.97] flex items-center gap-1.5 whitespace-nowrap shrink-0"
           >
-            <i className="fa-solid fa-terminal text-xs shrink-0 text-white"></i>
+            <Terminal className="w-3 h-3 shrink-0 text-white" />
             <span>Terminal</span>
           </button>
           <button
             onClick={onOpenSFTP}
             className="px-2.5 py-1.5 bg-background-tertiary text-white border border-border-primary rounded-lg text-xs font-medium transition-all duration-200 ease-macos shadow-macos-button hover:bg-background-elevated hover:border-macos-gray-2 active:shadow-macos-button-active active:scale-[0.97] flex items-center gap-1.5 whitespace-nowrap shrink-0"
           >
-            <i className="fa-solid fa-folder-open text-xs shrink-0 text-macos-green"></i>
+            <FolderOpen className="w-3 h-3 shrink-0 text-macos-green" />
             <span>SFTP</span>
           </button>
           <div className={`relative shrink-0 ${isMenuOpen ? 'z-50' : ''}`}>
@@ -167,7 +182,7 @@ export const HostListItem = ({
               onClick={onToggleMenu}
               className="flex items-center justify-center w-7 h-7 bg-background-tertiary border border-border-primary rounded-lg hover:border-macos-gray-2 hover:bg-background-elevated text-text-secondary transition-all duration-200 ease-macos shadow-macos-button active:shadow-macos-button-active active:scale-[0.97] shrink-0"
             >
-              <i className="fa-solid fa-ellipsis-vertical text-xs text-text-secondary"></i>
+              <MoreVertical className="w-3 h-3 text-text-secondary" />
             </button>
             <ActionMenu
               isOpen={isMenuOpen}
@@ -187,12 +202,12 @@ export const HostListItem = ({
       {isExpanded && host.disks && host.disks.length > 0 && (
         <div className="px-4 py-3 bg-background-tertiary/30 border-t border-border-secondary">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-semibold text-text-secondary">
-              <i className="fa-solid fa-hard-drive mr-1.5 text-macos-blue"></i>
+            <span className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
+              <HardDrive className="w-3 h-3 text-macos-blue" />
               Disk Details ({host.disks.length})
             </span>
             <button onClick={onToggleExpand} className="text-xs text-text-tertiary hover:text-white flex items-center gap-1">
-              <i className="fa-solid fa-chevron-up text-text-tertiary"></i>
+              <ChevronUp className="w-3 h-3 text-text-tertiary" />
               Collapse
             </button>
           </div>
@@ -209,7 +224,7 @@ export const HostListItem = ({
                 <div key={index} className="bg-background-secondary rounded-lg p-3 border border-border-primary hover:border-macos-gray-2 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
-                      <i className={`fa-solid fa-hard-drive w-4 h-4 ${isUnmounted ? 'text-text-tertiary' : isSystemDisk ? 'text-macos-blue' : 'text-macos-orange'}`}></i>
+                      <HardDrive className={`w-4 h-4 ${isUnmounted ? 'text-text-tertiary' : isSystemDisk ? 'text-macos-blue' : 'text-macos-orange'}`} />
                       <span className="text-xs font-medium text-text-secondary">{isUnmounted ? 'Unmounted' : isSystemDisk ? 'System Disk' : 'Data Disk'}</span>
                       {isLVM && <span className="text-[9px] px-1 py-0.5 bg-macos-purple/20 text-macos-purple rounded font-medium">LVM</span>}
                     </div>
@@ -222,36 +237,36 @@ export const HostListItem = ({
                   </div>
                   <div className="space-y-1 pt-2 border-t border-border-secondary">
                     <div className="flex items-center gap-1.5 text-[10px] text-text-tertiary">
-                      <i className="fa-solid fa-tag w-3 h-3 text-macos-blue"></i>
+                      <Tag className="w-3 h-3 text-macos-blue" />
                       <span className="truncate font-mono" title={`Device: ${devicePath}`}>{devicePath || '-'}</span>
                     </div>
                     {hasPhysicalDisk && (
                       <div className="flex items-center gap-1.5 text-[10px] text-macos-blue">
-                        <i className="fa-solid fa-hard-drive w-3 h-3 text-macos-blue"></i>
+                        <HardDrive className="w-3 h-3 text-macos-blue" />
                         <span className="truncate font-mono" title={`Physical Disk: ${physicalDiskPath}`}>Physical Disk: {physicalDiskPath}</span>
                       </div>
                     )}
                     {disk.mount_point ? (
                       <div className="flex items-center gap-1.5 text-[10px] text-text-tertiary">
-                        <i className="fa-solid fa-folder-open w-3 h-3 text-macos-orange"></i>
+                        <FolderOpen className="w-3 h-3 text-macos-orange" />
                         <span className="truncate font-mono" title={`Mount: ${disk.mount_point}`}>{disk.mount_point}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5 text-[10px] text-macos-orange">
-                        <i className="fa-solid fa-triangle-exclamation w-3 h-3"></i>
+                        <AlertTriangle className="w-3 h-3" />
                         <span>No Mount Point</span>
                       </div>
                     )}
                     {disk.fs_type && (
                       <div className="flex items-center gap-1.5 text-[10px] text-text-tertiary">
-                        <i className="fa-solid fa-layer-group w-3 h-3 text-macos-purple"></i>
+                        <Layers className="w-3 h-3 text-macos-purple" />
                         <span>{disk.fs_type}</span>
                       </div>
                     )}
                     {isUnmounted && (
                       <div className="mt-2 p-1.5 bg-macos-orange/10 rounded border border-macos-orange/20">
                         <div className="text-[10px] text-macos-orange flex items-start gap-1">
-                          <i className="fa-solid fa-circle-info w-3 h-3 mt-0.5 shrink-0 text-macos-orange"></i>
+                          <Info className="w-3 h-3 mt-0.5 shrink-0 text-macos-orange" />
                           <span>Unmounted or Unformatted</span>
                         </div>
                       </div>

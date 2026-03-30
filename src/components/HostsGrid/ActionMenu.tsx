@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Pencil, Copy, Plug, Trash2 } from 'lucide-react';
 import type { ActionMenuProps } from './types';
 
 export const ActionMenu = ({
@@ -105,7 +106,7 @@ export const ActionMenu = ({
         className="w-full px-3 py-1.5 text-left text-xs text-white
                  hover:bg-macos-blue/20 flex items-center gap-2 transition-colors"
       >
-        <i className="fa-solid fa-pencil w-3 h-3 text-macos-blue"></i>
+        <Pencil className="w-3 h-3 text-macos-blue" />
         Edit
       </button>
       <button
@@ -113,7 +114,7 @@ export const ActionMenu = ({
         className="w-full px-3 py-1.5 text-left text-xs text-white
                  hover:bg-macos-blue/20 flex items-center gap-2 transition-colors"
       >
-        <i className="fa-solid fa-copy w-3 h-3 text-macos-green"></i>
+        <Copy className="w-3 h-3 text-macos-green" />
         Copy
       </button>
       <button
@@ -121,7 +122,7 @@ export const ActionMenu = ({
         className="w-full px-3 py-1.5 text-left text-xs text-white
                  hover:bg-macos-blue/20 flex items-center gap-2 transition-colors"
       >
-        <i className="fa-solid fa-plug w-3 h-3 text-macos-purple"></i>
+        <Plug className="w-3 h-3 text-macos-purple" />
         Test
       </button>
       <div className="h-px bg-border-secondary my-1" />
@@ -130,7 +131,7 @@ export const ActionMenu = ({
         className="w-full px-3 py-1.5 text-left text-xs text-macos-red
                  hover:bg-macos-red/20 flex items-center gap-2 transition-colors"
       >
-        <i className="fa-solid fa-trash w-3 h-3 text-macos-red"></i>
+        <Trash2 className="w-3 h-3 text-macos-red" />
         Delete
       </button>
     </div>,

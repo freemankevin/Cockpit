@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { X, UploadCloud } from 'lucide-react';
 import type { SFTPModalProps } from '../sftp/types';
 import { useSFTPModal } from './useSFTPModal';
 import {

@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 // Pagination component - Dark Mode
 interface PaginationProps {
   currentPage: number;
@@ -81,7 +83,7 @@ const Pagination = ({
             disabled={currentPage === 1}
             className="w-7 h-7 flex items-center justify-center rounded text-text-secondary hover:bg-background-tertiary disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
-            <i className="fa-solid fa-chevron-left w-4 h-4"></i>
+            <ChevronLeft className="w-4 h-4" />
           </button>
           
           {/* Page numbers */}
@@ -109,7 +111,7 @@ const Pagination = ({
             disabled={currentPage === totalPages || totalPages === 0}
             className="w-7 h-7 flex items-center justify-center rounded text-text-secondary hover:bg-background-tertiary disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
-            <i className="fa-solid fa-chevron-right w-4 h-4"></i>
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>

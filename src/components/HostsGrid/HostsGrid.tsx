@@ -1,4 +1,5 @@
 import type { SSHHost } from '@/types';
+import { Plus, Search, RotateCw, Download } from 'lucide-react';
 import HostListItem from './HostListItem';
 import Checkbox from '../Checkbox';
 import MoreActionsMenu from './MoreActionsMenu';
@@ -135,7 +136,7 @@ const HostsGrid = ({
                      hover:brightness-110 hover:shadow-glow-blue
                      active:shadow-macos-button-active active:scale-[0.97]"
           >
-            <i className="fa-solid fa-plus text-[11px]"></i>
+            <Plus className="w-[11px] h-[11px]" />
             <span>Add Host</span>
           </button>
 
@@ -158,7 +159,7 @@ const HostsGrid = ({
         <div className="flex items-center gap-2">
           {/* Search box */}
           <div className="relative">
-            <i className="fa-solid fa-search text-[12px] absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"></i>
+            <Search className="w-[12px] h-[12px] absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
             <input
               type="text"
               placeholder="Search..."
@@ -187,7 +188,7 @@ const HostsGrid = ({
                        active:shadow-macos-button-active active:scale-[0.97]
                        disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
-              <i className={`fa-solid fa-rotate-right text-[12px] text-macos-green ${isRefreshing ? 'animate-spin' : ''}`}></i>
+              <RotateCw className={`w-[12px] h-[12px] text-macos-green ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
 
             <button
@@ -200,7 +201,7 @@ const HostsGrid = ({
                        shadow-macos-button
                        active:shadow-macos-button-active active:scale-[0.97]"
             >
-              <i className="fa-solid fa-download text-[12px] text-macos-purple"></i>
+              <Download className="w-[12px] h-[12px] text-macos-purple" />
             </button>
           </div>
         </div>

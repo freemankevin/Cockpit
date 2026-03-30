@@ -1,3 +1,14 @@
+import {
+  Check,
+  AlertCircle,
+  Ban,
+  Loader2,
+  Clock,
+  Upload,
+  X,
+  ArrowDownCircle,
+  Trash2,
+} from 'lucide-react';
 import type { TransferTask, TransferLog, LogFilter } from './types';
 import { formatFileSize } from './utils';
 import type { UploadTask } from './hooks/useUploadManager';
@@ -36,12 +47,12 @@ const getStatusColor = (status: TransferTask['status']) => {
 
 const getStatusIcon = (status: TransferTask['status']) => {
   switch (status) {
-    case 'completed': return <i className="fa-solid fa-check text-[11px]" />;
-    case 'failed': return <i className="fa-solid fa-circle-exclamation text-[11px]" />;
-    case 'cancelled': return <i className="fa-solid fa-ban text-[11px]" />;
-    case 'transferring': return <i className="fa-solid fa-spinner animate-spin text-[11px]" />;
-    case 'paused': return <i className="fa-solid fa-clock text-[11px]" />;
-    default: return <i className="fa-solid fa-clock text-[11px]" />;
+    case 'completed': return <Check className="w-[11px] h-[11px]" />;
+    case 'failed': return <AlertCircle className="w-[11px] h-[11px]" />;
+    case 'cancelled': return <Ban className="w-[11px] h-[11px]" />;
+    case 'transferring': return <Loader2 className="w-[11px] h-[11px] animate-spin" />;
+    case 'paused': return <Clock className="w-[11px] h-[11px]" />;
+    default: return <Clock className="w-[11px] h-[11px]" />;
   }
 };
 
@@ -149,7 +160,7 @@ const TransferPanel = ({
         {activeLogFilter === 'upload' && activeUploadTasks.length > 0 && (
           <div>
             <h5 className="text-[11px] font-semibold text-macos-blue uppercase tracking-wider mb-2 flex items-center gap-2">
-              <i className="fa-solid fa-spinner fa-spin text-[10px]" />
+              <Loader2 className="w-[10px] h-[10px] animate-spin" />
               Active Uploads ({activeUploadTasks.length})
             </h5>
             <div className="space-y-2">
@@ -160,7 +171,7 @@ const TransferPanel = ({
                   onClick={() => onViewUploadTask?.(task)}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
-                    <i className="fa-solid fa-upload text-[10px] text-macos-blue" />
+                    <Upload className="w-[10px] h-[10px] text-macos-blue" />
                     <span className="flex-1 truncate text-white text-[12px] font-medium" title={task.filename}>{task.filename}</span>
                     <span className="text-[11px] text-macos-blue font-semibold">{Math.round(task.progress.progress || 0)}%</span>
                     <button
@@ -168,7 +179,7 @@ const TransferPanel = ({
                       className="w-6 h-6 flex items-center justify-center rounded-lg bg-macos-red/10 hover:bg-macos-red/20 text-macos-red transition-all border border-macos-red/20 hover:border-macos-red/40"
                       title="Cancel"
                     >
-                      <i className="fa-solid fa-xmark text-[10px]" />
+                      <X className="w-[10px] h-[10px]" />
                     </button>
                   </div>
                   {/* Progress bar */}
@@ -196,7 +207,7 @@ const TransferPanel = ({
         {activeLogFilter === 'download' && activeDownloadTasks.length > 0 && (
           <div>
             <h5 className="text-[11px] font-semibold text-macos-green uppercase tracking-wider mb-2 flex items-center gap-2">
-              <i className="fa-solid fa-spinner fa-spin text-[10px]" />
+              <Loader2 className="w-[10px] h-[10px] animate-spin" />
               Active Downloads ({activeDownloadTasks.length})
             </h5>
             <div className="space-y-2">
@@ -207,7 +218,7 @@ const TransferPanel = ({
                   onClick={() => onViewDownloadTask?.(task)}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
-                    <i className="fa-solid fa-circle-down text-[10px] text-macos-green" />
+                    <ArrowDownCircle className="w-[10px] h-[10px] text-macos-green" />
                     <span className="flex-1 truncate text-white text-[12px] font-medium" title={task.filename}>{task.filename}</span>
                     <span className="text-[11px] text-macos-green font-semibold">{Math.round(task.progress.progress || 0)}%</span>
                     <button
@@ -215,7 +226,7 @@ const TransferPanel = ({
                       className="w-6 h-6 flex items-center justify-center rounded-lg bg-macos-red/10 hover:bg-macos-red/20 text-macos-red transition-all border border-macos-red/20 hover:border-macos-red/40"
                       title="Cancel"
                     >
-                      <i className="fa-solid fa-xmark text-[10px]" />
+                      <X className="w-[10px] h-[10px]" />
                     </button>
                   </div>
                   {/* Progress bar */}
@@ -243,7 +254,7 @@ const TransferPanel = ({
         {completedTasks.length > 0 && (
           <div>
             <h5 className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider mb-2 flex items-center gap-2">
-              <i className="fa-solid fa-check text-[10px]" />
+              <Check className="w-[10px] h-[10px]" />
               {activeLogFilter === 'upload' ? 'Uploads' : 'Downloads'} ({completedTasks.length})
             </h5>
             <div className="space-y-1">
@@ -259,9 +270,9 @@ const TransferPanel = ({
                   }`}
                 >
                   {task.type === 'upload' ? (
-                    <i className={`fa-solid fa-upload text-[10px] ${task.status === 'failed' ? 'text-macos-red' : task.status === 'cancelled' ? 'text-macos-orange' : 'text-macos-green'}`} />
+                    <Upload className={`w-[10px] h-[10px] ${task.status === 'failed' ? 'text-macos-red' : task.status === 'cancelled' ? 'text-macos-orange' : 'text-macos-green'}`} />
                   ) : (
-                    <i className={`fa-solid fa-circle-down text-[10px] ${task.status === 'failed' ? 'text-macos-red' : task.status === 'cancelled' ? 'text-macos-orange' : 'text-macos-green'}`} />
+                    <ArrowDownCircle className={`w-[10px] h-[10px] ${task.status === 'failed' ? 'text-macos-red' : task.status === 'cancelled' ? 'text-macos-orange' : 'text-macos-green'}`} />
                   )}
                   <span className="flex-1 truncate text-text-secondary">{task.filename}</span>
                   <span className="text-[11px] text-text-tertiary">{formatFileSize(task.size)}</span>
@@ -296,7 +307,7 @@ const TransferPanel = ({
             }}
             className="text-text-tertiary hover:text-white transition-colors flex items-center gap-1"
           >
-            <i className="fa-solid fa-trash-can text-[10px]" />
+            <Trash2 className="w-[10px] h-[10px]" />
             Clear
           </button>
         </div>

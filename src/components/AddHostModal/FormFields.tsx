@@ -1,4 +1,20 @@
 import { keyApi, type SSHKeyResponse } from '@/services/api';
+import {
+  Server,
+  Globe,
+  Hash,
+  User,
+  Key,
+  Lock,
+  PenSquare,
+  Upload,
+  Info,
+  Shield,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Copy,
+} from 'lucide-react';
 
 // Form data type
 export interface HostFormData {
@@ -31,7 +47,7 @@ export function BasicInfoFields({ formData, setFormData }: Pick<FormFieldsProps,
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
         <label className="text-[12px] font-semibold text-text-secondary uppercase tracking-wide flex items-center gap-1.5">
-          <i className="fa-solid fa-server w-3.5 h-3.5 text-macos-blue"></i>
+          <Server className="w-3.5 h-3.5 text-macos-blue" />
           Host Name
         </label>
         <input
@@ -48,7 +64,7 @@ export function BasicInfoFields({ formData, setFormData }: Pick<FormFieldsProps,
       </div>
       <div className="space-y-2">
         <label className="text-[12px] font-semibold text-text-secondary uppercase tracking-wide flex items-center gap-1.5">
-          <i className="fa-solid fa-globe w-3.5 h-3.5 text-macos-teal"></i>
+          <Globe className="w-3.5 h-3.5 text-macos-teal" />
           IPv4 Address
         </label>
         <input
@@ -73,7 +89,7 @@ export function PortUsernameFields({ formData, setFormData }: Pick<FormFieldsPro
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
         <label className="text-[12px] font-semibold text-text-secondary uppercase tracking-wide flex items-center gap-1.5">
-          <i className="fa-solid fa-hashtag w-3.5 h-3.5 text-macos-purple"></i>
+          <Hash className="w-3.5 h-3.5 text-macos-purple" />
           Port
         </label>
         <input
@@ -89,7 +105,7 @@ export function PortUsernameFields({ formData, setFormData }: Pick<FormFieldsPro
       </div>
       <div className="space-y-2">
         <label className="text-[12px] font-semibold text-text-secondary uppercase tracking-wide flex items-center gap-1.5">
-          <i className="fa-solid fa-user w-3.5 h-3.5 text-macos-green"></i>
+          <User className="w-3.5 h-3.5 text-macos-green" />
           Username
         </label>
         <input
@@ -126,7 +142,7 @@ export function AuthTypeSelector({ formData, setFormData }: Pick<FormFieldsProps
                       : 'border-border-primary bg-background-tertiary text-text-secondary hover:border-macos-gray-2 hover:bg-background-elevated'
                     }`}
         >
-          <i className="fa-solid fa-key w-4 h-4"></i>
+          <Key className="w-4 h-4" />
           SSH Key
         </button>
         <button
@@ -139,7 +155,7 @@ export function AuthTypeSelector({ formData, setFormData }: Pick<FormFieldsProps
                       : 'border-border-primary bg-background-tertiary text-text-secondary hover:border-macos-gray-2 hover:bg-background-elevated'
                     }`}
         >
-          <i className="fa-solid fa-lock w-4 h-4"></i>
+          <Lock className="w-4 h-4" />
           Password
         </button>
       </div>
@@ -175,7 +191,7 @@ export function SSHKeyFields({
     <div className="space-y-3">
       <div className="space-y-2">
         <label className="text-[12px] font-semibold text-text-secondary uppercase tracking-wide flex items-center gap-1.5">
-          <i className="fa-solid fa-key w-3.5 h-3.5 text-macos-orange"></i>
+          <Key className="w-3.5 h-3.5 text-macos-orange" />
           Select Key
         </label>
         <select
@@ -202,13 +218,13 @@ export function SSHKeyFields({
         <div className="space-y-2 animate-fade-in">
           <div className="flex items-center justify-between">
             <label className="text-[12px] font-semibold text-text-secondary uppercase tracking-wide flex items-center gap-1.5">
-              <i className="fa-solid fa-pen-to-square w-3.5 h-3.5 text-macos-orange"></i>
+              <PenSquare className="w-3.5 h-3.5 text-macos-orange" />
               Private Key Content
             </label>
             <label className="flex items-center gap-1.5 px-3 py-1.5 bg-macos-green/20 hover:bg-macos-green/30
                            text-[11px] font-medium text-macos-green rounded-lg cursor-pointer
                            transition-all duration-200">
-              <i className="fa-solid fa-upload w-3 h-3"></i>
+              <Upload className="w-3 h-3" />
               Upload File
               <input
                 type="file"
@@ -230,7 +246,7 @@ export function SSHKeyFields({
             onChange={(e) => setFormData({ ...formData, private_key: e.target.value })}
           />
           <p className="text-[11px] text-text-tertiary flex items-center gap-1">
-            <i className="fa-solid fa-info-circle w-3 h-3 text-macos-blue"></i>
+            <Info className="w-3 h-3 text-macos-blue" />
             Paste content directly or use 'Upload File' to load from .pem or .key file
           </p>
         </div>
@@ -239,7 +255,7 @@ export function SSHKeyFields({
       {/* Key Passphrase (optional) */}
       <div className="space-y-2">
         <label className="text-[12px] font-semibold text-text-secondary uppercase tracking-wide flex items-center gap-1.5">
-          <i className="fa-solid fa-shield-halved w-3.5 h-3.5 text-macos-purple"></i>
+          <Shield className="w-3.5 h-3.5 text-macos-purple" />
           Key Passphrase <span className="text-text-tertiary font-normal normal-case">(optional)</span>
         </label>
         <input
@@ -270,11 +286,11 @@ export function PasswordField({
   return (
     <div className="space-y-2">
       <label className="text-[12px] font-semibold text-text-secondary uppercase tracking-wide flex items-center gap-1.5">
-        <i className="fa-solid fa-lock w-3.5 h-3.5 text-macos-pink"></i>
+        <Lock className="w-3.5 h-3.5 text-macos-pink" />
         Password
         {isEditMode && hasPassword && (
           <span className="ml-auto text-[11px] font-normal text-macos-green flex items-center gap-1">
-            <i className="fa-solid fa-check-circle w-3 h-3"></i>
+            <CheckCircle2 className="w-3 h-3" />
             Set
           </span>
         )}
@@ -299,7 +315,11 @@ export function PasswordField({
                    transition-colors rounded-md hover:bg-background-elevated"
           title={showPassword ? "Hide password" : "Show password"}
         >
-          <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} w-4 h-4`}></i>
+          {showPassword ? (
+            <EyeOff className="w-4 h-4" />
+          ) : (
+            <Eye className="w-4 h-4" />
+          )}
         </button>
       </div>
     </div>
@@ -312,7 +332,7 @@ export function CopyModeHint({ copyingHostName }: { copyingHostName: string }) {
     <div className="p-4 bg-macos-indigo/10 border border-macos-indigo/30 rounded-xl">
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-lg bg-macos-indigo/20 flex items-center justify-center flex-shrink-0">
-          <i className="fa-solid fa-copy w-4 h-4 text-macos-indigo"></i>
+          <Copy className="w-4 h-4 text-macos-indigo" />
         </div>
         <div>
           <p className="text-[13px] font-semibold text-white">Clone Host Configuration</p>

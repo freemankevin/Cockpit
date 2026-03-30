@@ -1,4 +1,5 @@
 import React from 'react';
+import { Filter, FolderPlus, Upload, ChevronDown, ArrowLeftRight } from 'lucide-react';
 import type { LogFilter } from './types';
 import { FileUploadIcon, FolderUploadIcon } from './Icons';
 
@@ -46,7 +47,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           className="flex items-center gap-1 px-2 py-1 text-xs text-text-secondary hover:text-white hover:bg-white/5 rounded transition-colors"
           title="Filter Files"
         >
-          <i className="fa-solid fa-filter text-[11px]" />
+          <Filter className="w-[11px] h-[11px]" />
           <span>Filter</span>
         </button>
       )}
@@ -56,7 +57,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         className="flex items-center gap-1 px-2 py-1 text-xs text-text-secondary hover:text-white hover:bg-white/5 rounded transition-colors"
         title="Create New Folder"
       >
-        <i className="fa-solid fa-folder-plus text-[11px]" />
+        <FolderPlus className="w-[11px] h-[11px]" />
         <span>New</span>
       </button>
 
@@ -67,9 +68,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           className="flex items-center gap-1 px-2 py-1 text-xs text-text-secondary hover:text-white hover:bg-white/5 rounded transition-colors"
           title="Upload Files or Folders"
         >
-          <i className="fa-solid fa-upload text-[11px]" />
+          <Upload className="w-[11px] h-[11px]" />
           <span>Upload</span>
-          <i className="fa-solid fa-chevron-down text-[8px] ml-0.5" />
+          <ChevronDown className="w-[8px] h-[8px] ml-0.5" />
         </button>
         
         {showUploadMenu && (
@@ -109,7 +110,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         }`}
         title="Transfer History"
       >
-        <i className="fa-solid fa-right-left text-[11px]" />
+        <ArrowLeftRight className="w-[11px] h-[11px]" />
         <span>Transfers</span>
         {activeTransfers > 0 && (
           <span className="w-1.5 h-1.5 rounded-full bg-macos-blue animate-pulse" />

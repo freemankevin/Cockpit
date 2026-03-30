@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { ChevronDown, Power, RotateCw, Trash2 } from 'lucide-react';
 
 interface MoreActionsMenuProps {
   isOpen: boolean;
@@ -104,7 +105,7 @@ export const MoreActionsMenu = ({
             {selectedCount}
           </span>
         )}
-        <i className="fa-solid fa-chevron-down text-[10px] text-text-tertiary"></i>
+        <ChevronDown className="w-[10px] h-[10px] text-text-tertiary" />
       </button>
     );
   }
@@ -128,7 +129,7 @@ export const MoreActionsMenu = ({
             {selectedCount}
           </span>
         )}
-        <i className="fa-solid fa-chevron-down text-[10px] text-text-tertiary rotate-180 transition-transform"></i>
+        <ChevronDown className="w-[10px] h-[10px] text-text-tertiary rotate-180 transition-transform" />
       </button>
 
       {createPortal(
@@ -145,14 +146,14 @@ export const MoreActionsMenu = ({
             onClick={handleShutdown}
             className="flex items-center gap-2 w-full px-2.5 py-1.5 text-xs text-white hover:bg-macos-blue/20 transition-colors"
           >
-            <i className="fa-solid fa-power-off text-[11px] text-macos-red"></i>
+            <Power className="w-[11px] h-[11px] text-macos-red" />
             <span>Shutdown</span>
           </button>
           <button
             onClick={handleRestart}
             className="flex items-center gap-2 w-full px-2.5 py-1.5 text-xs text-white hover:bg-macos-blue/20 transition-colors"
           >
-            <i className="fa-solid fa-rotate-right text-[11px] text-macos-blue"></i>
+            <RotateCw className="w-[11px] h-[11px] text-macos-blue" />
             <span>Restart</span>
           </button>
           <div className="h-px bg-border-secondary my-1" />
@@ -160,7 +161,7 @@ export const MoreActionsMenu = ({
             onClick={handleDelete}
             className="flex items-center gap-2 w-full px-2.5 py-1.5 text-xs text-macos-red hover:bg-macos-red/20 transition-colors"
           >
-            <i className="fa-solid fa-trash text-[11px] text-macos-red"></i>
+            <Trash2 className="w-[11px] h-[11px] text-macos-red" />
             <span>Delete</span>
           </button>
         </div>,

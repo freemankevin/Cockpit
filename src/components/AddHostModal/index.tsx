@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import type { SSHHost, CreateHostRequest, UpdateHostRequest } from '@/types';
 import { keyApi, type SSHKeyResponse } from '@/services/api';
 import {
+  Server,
+  X,
+  Loader2,
+  Plug,
+} from 'lucide-react';
+import {
   HostFormData,
   BasicInfoFields,
   PortUsernameFields,
@@ -186,7 +192,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-macos-blue to-macos-indigo 
                           flex items-center justify-center shadow-macos-button">
-              <i className="fa-solid fa-server w-5 h-5 text-white"></i>
+              <Server className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="text-[17px] font-semibold text-white">
@@ -204,7 +210,7 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
             className="p-2 text-text-tertiary hover:text-white hover:bg-background-elevated 
                      rounded-lg transition-all duration-200"
           >
-            <i className="fa-solid fa-xmark w-5 h-5"></i>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -253,12 +259,12 @@ const AddHostModal = ({ host, copyingHost, onClose, onSubmit }: AddHostModalProp
           >
             {loading ? (
               <>
-                <i className="fa-solid fa-circle-notch animate-spin w-4 h-4"></i>
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Saving...
               </>
             ) : (
               <>
-                <i className="fa-solid fa-plug w-4 h-4"></i>
+                <Plug className="w-4 h-4" />
                 {getSubmitText()}
               </>
             )}

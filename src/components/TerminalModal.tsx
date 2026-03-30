@@ -1,6 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SSHHost } from '@/types';
 import useTerminal from '@/hooks/useTerminal';
+import {
+  X,
+  Minus,
+  Plus,
+  Plug,
+  Check,
+  Copy,
+  RotateCw,
+  Unplug,
+} from 'lucide-react';
 
 interface TerminalModalProps {
   host: SSHHost;
@@ -183,7 +193,7 @@ const TerminalModal = ({ host, onClose, isMinimized: externalMinimized, onToggle
                     boxShadow: '0 0.5px 1px rgba(0,0,0,0.3), inset 0 0.5px 0 rgba(255,255,255,0.2)'
                   }}
                   title="Close">
-                  <i className="fa-solid fa-xmark text-[9px] text-[#8b0000] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <X className="w-[9px] h-[9px] text-[#8b0000] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
                 <button
                   onClick={toggleMinimize}
@@ -193,7 +203,7 @@ const TerminalModal = ({ host, onClose, isMinimized: externalMinimized, onToggle
                     boxShadow: '0 0.5px 1px rgba(0,0,0,0.3), inset 0 0.5px 0 rgba(255,255,255,0.2)'
                   }}
                   title="Minimize">
-                  <i className="fa-solid fa-minus text-[9px] text-[#8b6914] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Minus className="w-[9px] h-[9px] text-[#8b6914] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
                 <button
                   onClick={toggleFullscreen}
@@ -203,14 +213,14 @@ const TerminalModal = ({ host, onClose, isMinimized: externalMinimized, onToggle
                     boxShadow: '0 0.5px 1px rgba(0,0,0,0.3), inset 0 0.5px 0 rgba(255,255,255,0.2)'
                   }}
                   title="Fullscreen">
-                  <i className="fa-solid fa-plus text-[8px] text-[#1a5c1a] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Plus className="w-[8px] h-[8px] text-[#1a5c1a] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               </div>
               {/* Connection status - center */}
               <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-text-secondary" style={{ fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif', fontSize: '12px' }}>
                 {connected ? (
                   <>
-                    <i className="fa-solid fa-plug-circle-check text-macos-green" />
+                    <Plug className="w-4 h-4 text-macos-green" />
                     <div className="flex items-center gap-1.5 group/copy">
                       <span className="cursor-pointer hover:text-white transition-colors">{host.address}</span>
                       <button
@@ -219,9 +229,9 @@ const TerminalModal = ({ host, onClose, isMinimized: externalMinimized, onToggle
                         title="Copy IP"
                       >
                         {copiedField === 'terminal-ip' ? (
-                          <i className="fa-solid fa-check text-xs text-macos-green"></i>
+                          <Check className="w-3 h-3 text-macos-green" />
                         ) : (
-                          <i className="fa-regular fa-copy text-xs text-text-tertiary hover:text-white"></i>
+                          <Copy className="w-3 h-3 text-text-tertiary hover:text-white" />
                         )}
                         {copiedField === 'terminal-ip' && (
                           <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center z-50 animate-fade-in">
@@ -236,17 +246,17 @@ const TerminalModal = ({ host, onClose, isMinimized: externalMinimized, onToggle
                   </>
                 ) : connecting ? (
                   <>
-                    <i className="fa-solid fa-plug animate-pulse text-macos-orange" />
+                    <Plug className="w-4 h-4 animate-pulse text-macos-orange" />
                     <span className="text-macos-orange">Connecting...</span>
                   </>
                 ) : error ? (
                   <button onClick={reconnect} className="flex items-center gap-1.5 px-2 py-1 bg-primary/20 hover:bg-primary/30 text-primary rounded transition-colors">
-                    <i className="fa-solid fa-rotate-right text-sm" />
+                    <RotateCw className="w-4 h-4" />
                     <span>Reconnect</span>
                   </button>
                 ) : (
                   <>
-                    <i className="fa-solid fa-plug-circle-xmark text-macos-red" />
+                    <Unplug className="w-4 h-4 text-macos-red" />
                     <span className="text-macos-red">Disconnected</span>
                   </>
                 )}
