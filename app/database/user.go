@@ -142,6 +142,22 @@ func UpdateLastLogin(userID uint, ip string) error {
 	}).Error
 }
 
+// UnlockUser 解锁用户账号
+func UnlockUser(userID uint) error {
+	return DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"login_attempts": 0,
+		"locked_until":   nil,
+	}).Error
+}
+
+// UnlockUserByUsername 通过用户名解锁用户账号
+func UnlockUserByUsername(username string) error {
+	return DB.Model(&models.User{}).Where("username = ?", username).Updates(map[string]interface{}{
+		"login_attempts": 0,
+		"locked_until":   nil,
+	}).Error
+}
+
 // CheckUserExists 检查用户名是否已存在
 func CheckUserExists(username string) (bool, error) {
 	var count int64
@@ -152,7 +168,7 @@ func CheckUserExists(username string) (bool, error) {
 // Default admin credentials
 const (
 	DefaultAdminUsername = "admin"
-	DefaultAdminPassword = "admin123"
+	DefaultAdminPassword = "admin"
 )
 
 // InitDefaultAdmin 初始化默认管理员账号
@@ -192,7 +208,7 @@ func printStartupInfo(isFirstRun bool) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	if isFirstRun {
 		fmt.Printf("%s%s%s [%sINFO %s] Default admin account created\n", colorGray, timestamp, colorReset, colorGreen, colorReset)
-		fmt.Printf("%s%s%s [%sINFO %s] Username: admin | Password: admin123\n", colorGray, timestamp, colorReset, colorGreen, colorReset)
+		fmt.Printf("%s%s%s [%sINFO %s] Username: admin | Password: admin\n", colorGray, timestamp, colorReset, colorGreen, colorReset)
 		fmt.Printf("%s%s%s [%sWARN %s] Please change password after first login!\n", colorGray, timestamp, colorReset, colorYellow, colorReset)
 	} else {
 		fmt.Printf("%s%s%s [%sINFO %s] Cockpit Ready - Login with your credentials\n", colorGray, timestamp, colorReset, colorGreen, colorReset)

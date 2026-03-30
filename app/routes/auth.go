@@ -33,7 +33,7 @@ func loginHandler(db *gorm.DB) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"code":    400,
-				"message": "请求参数错误",
+				"message": "Invalid request parameters",
 				"data":    nil,
 			})
 			return
@@ -44,7 +44,7 @@ func loginHandler(db *gorm.DB) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"code":    500,
-				"message": "服务器内部错误",
+				"message": "Internal server error",
 				"data":    nil,
 			})
 			return
@@ -55,7 +55,7 @@ func loginHandler(db *gorm.DB) gin.HandlerFunc {
 			recordAuditLog(db, nil, req.Username, "login", "user", 0, "登录失败：用户不存在", c, "failed")
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "用户名或密码错误",
+				"message": "Invalid username or password",
 				"data":    nil,
 			})
 			return
@@ -66,7 +66,7 @@ func loginHandler(db *gorm.DB) gin.HandlerFunc {
 			recordAuditLog(db, &user.ID, user.Username, "login", "user", user.ID, "登录失败：账号已锁定", c, "failed")
 			c.JSON(http.StatusForbidden, gin.H{
 				"code":    403,
-				"message": "账号已被锁定，请稍后再试",
+				"message": "Account is locked, please try again later",
 				"data":    nil,
 			})
 			return
@@ -77,7 +77,7 @@ func loginHandler(db *gorm.DB) gin.HandlerFunc {
 			recordAuditLog(db, &user.ID, user.Username, "login", "user", user.ID, "登录失败：账号已禁用", c, "failed")
 			c.JSON(http.StatusForbidden, gin.H{
 				"code":    403,
-				"message": "账号已被禁用",
+				"message": "Account is disabled",
 				"data":    nil,
 			})
 			return
@@ -90,7 +90,7 @@ func loginHandler(db *gorm.DB) gin.HandlerFunc {
 			recordAuditLog(db, &user.ID, user.Username, "login", "user", user.ID, "登录失败：密码错误", c, "failed")
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "用户名或密码错误",
+				"message": "Invalid username or password",
 				"data":    nil,
 			})
 			return
@@ -101,7 +101,7 @@ func loginHandler(db *gorm.DB) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"code":    500,
-				"message": "生成令牌失败",
+				"message": "Failed to generate token",
 				"data":    nil,
 			})
 			return
@@ -116,7 +116,7 @@ func loginHandler(db *gorm.DB) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"code":    0,
-			"message": "登录成功",
+			"message": "Login successful",
 			"data":    tokenPair,
 		})
 	}
@@ -129,7 +129,7 @@ func refreshTokenHandler(db *gorm.DB) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"code":    400,
-				"message": "请求参数错误",
+				"message": "Invalid request parameters",
 				"data":    nil,
 			})
 			return
@@ -140,7 +140,7 @@ func refreshTokenHandler(db *gorm.DB) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "刷新令牌无效或已过期",
+				"message": "Invalid or expired refresh token",
 				"data":    nil,
 			})
 			return
@@ -151,7 +151,7 @@ func refreshTokenHandler(db *gorm.DB) gin.HandlerFunc {
 		if err != nil || user == nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "用户不存在",
+				"message": "User not found",
 				"data":    nil,
 			})
 			return
@@ -161,7 +161,7 @@ func refreshTokenHandler(db *gorm.DB) gin.HandlerFunc {
 		if !user.IsActive {
 			c.JSON(http.StatusForbidden, gin.H{
 				"code":    403,
-				"message": "账号已被禁用",
+				"message": "Account is disabled",
 				"data":    nil,
 			})
 			return
@@ -172,7 +172,7 @@ func refreshTokenHandler(db *gorm.DB) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"code":    500,
-				"message": "生成令牌失败",
+				"message": "Failed to generate token",
 				"data":    nil,
 			})
 			return
@@ -180,7 +180,7 @@ func refreshTokenHandler(db *gorm.DB) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"code":    0,
-			"message": "刷新成功",
+			"message": "Token refreshed successfully",
 			"data":    tokenPair,
 		})
 	}
@@ -193,7 +193,7 @@ func logoutHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    0,
-		"message": "登出成功",
+		"message": "Logout successful",
 		"data":    nil,
 	})
 }
@@ -204,7 +204,7 @@ func getCurrentUserHandler(c *gin.Context) {
 	if user == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"code":    401,
-			"message": "未认证",
+			"message": "Unauthorized",
 			"data":    nil,
 		})
 		return
@@ -224,7 +224,7 @@ func updatePasswordHandler(db *gorm.DB) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"code":    400,
-				"message": "请求参数错误",
+				"message": "Invalid request parameters",
 				"data":    nil,
 			})
 			return
@@ -234,7 +234,7 @@ func updatePasswordHandler(db *gorm.DB) gin.HandlerFunc {
 		if user == nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "未认证",
+				"message": "Unauthorized",
 				"data":    nil,
 			})
 			return
@@ -244,7 +244,7 @@ func updatePasswordHandler(db *gorm.DB) gin.HandlerFunc {
 		if !middleware.CheckPassword(req.OldPassword, user.PasswordHash) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"code":    400,
-				"message": "原密码错误",
+				"message": "Current password is incorrect",
 				"data":    nil,
 			})
 			return
@@ -254,7 +254,7 @@ func updatePasswordHandler(db *gorm.DB) gin.HandlerFunc {
 		if err := database.UpdateUserPassword(user.ID, req.NewPassword); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"code":    500,
-				"message": "更新密码失败",
+				"message": "Failed to update password",
 				"data":    nil,
 			})
 			return
@@ -265,7 +265,7 @@ func updatePasswordHandler(db *gorm.DB) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"code":    0,
-			"message": "密码修改成功",
+			"message": "Password updated successfully",
 			"data":    nil,
 		})
 	}

@@ -132,27 +132,27 @@ func CheckPassword(password, hash string) bool {
 	return err == nil
 }
 
-// JWTAuthMiddleware JWT 认证中间件
+// JWTAuthMiddleware JWT authentication middleware
 func JWTAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 从 Header 获取 Authorization
+		// Get Authorization from Header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "未提供认证令牌",
+				"message": "Authentication token not provided",
 				"data":    nil,
 			})
 			c.Abort()
 			return
 		}
 
-		// 提取 Bearer token
+		// Extract Bearer token
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "认证格式错误，请使用 Bearer token",
+				"message": "Invalid authentication format, please use Bearer token",
 				"data":    nil,
 			})
 			c.Abort()
@@ -161,42 +161,42 @@ func JWTAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		// 解析 token
+		// Parse token
 		claims, err := ParseToken(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "令牌无效或已过期",
+				"message": "Token is invalid or expired",
 				"data":    nil,
 			})
 			c.Abort()
 			return
 		}
 
-		// 验证 token 类型
+		// Verify token type
 		if claims.TokenType != "access" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
-				"message": "令牌类型错误",
+				"message": "Invalid token type",
 				"data":    nil,
 			})
 			c.Abort()
 			return
 		}
 
-		// 查询用户是否存在且激活
+		// Check if user exists and is active
 		var user models.User
 		if err := db.First(&user, claims.UserID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				c.JSON(http.StatusUnauthorized, gin.H{
 					"code":    401,
-					"message": "用户不存在",
+					"message": "User not found",
 					"data":    nil,
 				})
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"code":    500,
-					"message": "数据库错误",
+					"message": "Database error",
 					"data":    nil,
 				})
 			}
@@ -207,14 +207,14 @@ func JWTAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 		if !user.IsActive {
 			c.JSON(http.StatusForbidden, gin.H{
 				"code":    403,
-				"message": "用户已被禁用",
+				"message": "User account is disabled",
 				"data":    nil,
 			})
 			c.Abort()
 			return
 		}
 
-		// 将用户信息存入上下文
+		// Store user info in context
 		c.Set("userID", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("role", claims.Role)
@@ -251,7 +251,7 @@ func GetCurrentRole(c *gin.Context) models.UserRole {
 	return role.(models.UserRole)
 }
 
-// RequireRole 角色权限检查中间件
+// RequireRole Role permission check middleware
 func RequireRole(roles ...models.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		currentRole := GetCurrentRole(c)
@@ -265,7 +265,7 @@ func RequireRole(roles ...models.UserRole) gin.HandlerFunc {
 
 		c.JSON(http.StatusForbidden, gin.H{
 			"code":    403,
-			"message": "权限不足",
+			"message": "Insufficient permissions",
 			"data":    nil,
 		})
 		c.Abort()

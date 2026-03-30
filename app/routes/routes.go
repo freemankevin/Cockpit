@@ -111,8 +111,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			protected.DELETE("/transfers/type/:type", clearTransferRecordsByType)
 			protected.DELETE("/transfers/all", clearAllTransferRecords)
 
-			// WebSocket 终端
-			protected.GET("/terminal/:id", terminalHandler)
+			// WebSocket 终端（单独处理认证，因为 WebSocket 无法使用标准 Authorization header）
+			api.GET("/terminal/:id", terminalHandler)
 
 			// Certificate management
 			protected.GET("/certificates", getCertificateInfo)

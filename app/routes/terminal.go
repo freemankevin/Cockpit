@@ -8,6 +8,7 @@ import (
 
 	"cockpit/config"
 	"cockpit/database"
+	"cockpit/middleware"
 	"cockpit/models"
 	"cockpit/pkg/logger"
 
@@ -29,9 +30,41 @@ var terminalSessions = make(map[uint]*TerminalSession)
 var terminalMu sync.RWMutex
 
 // terminalHandler WebSocket 终端处理器
+// 支持 query 参数传递 token 进行认证（用于 WebSocket 连接）
 func terminalHandler(c *gin.Context) {
 	id := c.Param("id")
 	hostID := uint(parseInt(id))
+
+	// WebSocket 无法使用标准 Authorization header，需要从 query 参数获取 token
+	tokenString := c.Query("token")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication token required"})
+		return
+	}
+
+	// 验证 token
+	claims, err := middleware.ParseToken(tokenString)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		return
+	}
+
+	// 验证 token 类型
+	if claims.TokenType != "access" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type"})
+		return
+	}
+
+	// 检查用户是否存在且活跃
+	var user models.User
+	if err := database.DB.First(&user, claims.UserID).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	if !user.IsActive {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User account is disabled"})
+		return
+	}
 
 	// 获取主机信息
 	var host models.Host

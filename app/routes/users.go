@@ -35,6 +35,9 @@ func UserRoutes(r *gin.RouterGroup, db *gorm.DB) {
 	// 重置密码 - Admin only
 	users.POST("/:id/reset-password", middleware.RequireAdmin(), resetPasswordHandler(db))
 
+	// 解锁用户 - Admin only
+	users.POST("/:id/unlock", middleware.RequireAdmin(), unlockUserHandler(db))
+
 	// 审计日志 - Admin only
 	users.GET("/audit-logs", middleware.RequireAdmin(), listAuditLogsHandler(db))
 }
@@ -392,7 +395,63 @@ func resetPasswordHandler(db *gorm.DB) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"code":    0,
-			"message": "密码重置成功",
+			"message": "Password reset successfully",
+			"data":    nil,
+		})
+	}
+}
+
+// unlockUserHandler 解锁用户账号
+func unlockUserHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "Invalid user ID",
+				"data":    nil,
+			})
+			return
+		}
+
+		// Check if user exists
+		user, err := database.GetUserByID(uint(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "Failed to get user info",
+				"data":    nil,
+			})
+			return
+		}
+
+		if user == nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"code":    404,
+				"message": "User not found",
+				"data":    nil,
+			})
+			return
+		}
+
+		// Unlock user
+		if err := database.UnlockUser(uint(id)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "Failed to unlock user",
+				"data":    nil,
+			})
+			return
+		}
+
+		// Record audit log
+		currentUser := middleware.GetCurrentUser(c)
+		recordAuditLog(db, &currentUser.ID, currentUser.Username, "unlock_user", "user", uint(id),
+			"Unlocked user: "+user.Username, c, "success")
+
+		c.JSON(http.StatusOK, gin.H{
+			"code":    0,
+			"message": "User unlocked successfully",
 			"data":    nil,
 		})
 	}
