@@ -189,29 +189,26 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
           <button
             ref={notifButtonRef}
             onClick={() => setShowNotifications(!showNotifications)}
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150 relative"
+            className="w-7 h-7 rounded-md flex items-center justify-center transition-all duration-150 relative"
             style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-default)',
+              background: 'transparent',
               color: 'var(--text-secondary)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-tertiary)';
               e.currentTarget.style.color = 'var(--text-primary)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--bg-secondary)';
               e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
-            <Bell className="w-4.5 h-4.5" />
+            <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
               <span
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-xs font-medium"
+                className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[10px] font-medium"
                 style={{
                   background: 'var(--accent)',
                   color: 'white',
-                  padding: '0 4px',
+                  padding: '0 3px',
                 }}
               >
                 {unreadCount > 9 ? '9+' : unreadCount}

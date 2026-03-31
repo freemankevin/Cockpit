@@ -299,9 +299,9 @@ const Sidebar = ({
                       >
                         <div className="relative ml-4 pl-3 py-1">
                           {/* Left border line */}
-                          <div 
+                          <div
                             className="absolute left-0 top-2 bottom-2 w-px"
-                            style={{ background: 'var(--border-subtle)' }}
+                            style={{ background: 'rgba(255, 255, 255, 0.15)' }}
                           />
                           
                           <div className="space-y-0.5">
