@@ -491,8 +491,9 @@ code, pre, .font-mono {
     background: var(--bg-elevated);
     color: var(--text-primary);
   }
+  /* Railway 规范：选中状态使用中性背景色，仅图标显示 accent 色 */
   .nav-item.active {
-    background: var(--accent-muted);
+    background: var(--bg-elevated);
     color: var(--text-primary);
   }
   .nav-item.active .nav-item-icon {
@@ -1229,8 +1230,9 @@ code {
   background: var(--bg-elevated);
   color: var(--text-primary);
 }
+/* Railway 规范：选中状态使用中性背景色，仅图标显示 accent 色 */
 .nav-active {
-  background: var(--accent-muted);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 .nav-active .nav-icon {

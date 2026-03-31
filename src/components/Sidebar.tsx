@@ -253,7 +253,7 @@ const Sidebar = ({
                         transition-all duration-150
                         ${isCollapsed ? 'justify-center' : ''}`}
                       style={{
-                        background: parentActive ? 'var(--accent-muted)' : 'transparent',
+                        background: parentActive ? 'var(--bg-elevated)' : 'transparent',
                         color: parentActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                       }}
                       onMouseEnter={(e) => {
@@ -318,8 +318,8 @@ const Sidebar = ({
                                   className="flex items-center px-3 py-1.5 rounded-md text-[14px] font-medium
                                     transition-all duration-150"
                                   style={{
-                                    background: subIsActive ? 'var(--accent-muted)' : 'transparent',
-                                    color: subIsActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                    background: subIsActive ? 'var(--bg-elevated)' : 'transparent',
+                                    color: subIsActive ? 'var(--accent)' : 'var(--text-secondary)',
                                   }}
                                   onMouseEnter={(e) => {
                                     if (!subIsActive) {
