@@ -24,6 +24,9 @@ import {
   Wrench,
 } from 'lucide-react';
 
+// Check if user is default admin (username === 'admin')
+const isDefaultAdmin = (user: User): boolean => user.username === 'admin';
+
 interface NotificationData {
   type: 'success' | 'error' | 'info';
   title: string;
@@ -494,6 +497,9 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                   >
                     <UserCircle className="w-4 h-4 mr-1.5" style={{ color: 'var(--accent)' }} />
                     Username
+                    {isDefaultAdmin(currentUser) && (
+                      <Lock className="w-3 h-3 ml-1.5" style={{ color: 'var(--text-tertiary)' }} />
+                    )}
                   </label>
                   <input
                     type="text"
@@ -504,11 +510,23 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                       background: 'var(--bg-secondary)',
                       border: '0.5px solid var(--border-default)',
                       color: 'var(--text-primary)',
+                      opacity: isDefaultAdmin(currentUser) ? 0.6 : 1,
+                      cursor: isDefaultAdmin(currentUser) ? 'not-allowed' : 'text',
                     }}
                     placeholder="Enter username"
                     minLength={3}
                     maxLength={50}
+                    disabled={isDefaultAdmin(currentUser)}
                   />
+                  {isDefaultAdmin(currentUser) && (
+                    <p
+                      className="text-xs mt-2 flex items-center"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      Default admin username cannot be changed
+                    </p>
+                  )}
                 </div>
 
                 {/* Email field */}

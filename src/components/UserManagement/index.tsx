@@ -32,6 +32,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     showResetPasswordModal,
     formLoading,
     newPassword,
+    confirmPassword,
     setShowCreateModal,
     setShowEditModal,
     setShowDeleteConfirm,
@@ -39,10 +40,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     setFormData,
     setSelectedUser,
     setNewPassword,
+    setConfirmPassword,
     handleCreateUser,
     handleUpdateUser,
     handleDeleteUser,
     handleResetPassword,
+    handleUserAvatarUpdate,
     openEditModal,
     resetForm,
   } = useUserManagement();
@@ -82,6 +85,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     e.currentTarget.style.background = 'transparent';
   };
 
+  // Get avatar URL - same logic as Header component
+  const getAvatarUrl = (user: User) => {
+    if (user.avatar) {
+      // If avatar is a full URL, use it directly
+      if (user.avatar.startsWith('http')) return user.avatar;
+      // Otherwise, prepend the API base
+      return `http://127.0.0.1:8000${user.avatar}`;
+    }
+    // Default avatar
+    return '/cat.jpg';
+  };
+
   return (
     <div style={styles.container}>
       {/* Header */}
@@ -94,8 +109,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
           <p style={styles.subtitle}>Manage system users and permissions</p>
         </div>
         <div style={styles.headerActions}>
-          <button 
-            onClick={() => { resetForm(); setShowCreateModal(true); }} 
+          <button
+            onClick={() => { resetForm(); setShowCreateModal(true); }}
             style={styles.createButton}
             onMouseEnter={handleCreateButtonHover}
             onMouseLeave={handleCreateButtonLeave}
@@ -143,7 +158,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                   <td style={styles.td}>
                     <div style={styles.userName}>
                       <div style={styles.avatar}>
-                        {user.username.charAt(0).toUpperCase()}
+                        {getAvatarUrl(user) ? (
+                          <img
+                            src={getAvatarUrl(user)}
+                            alt={user.username}
+                            className="w-full h-full object-cover"
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: 'var(--radius-default)',
+                            }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)' }}>
+                            {user.username.charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       <span style={{ color: 'var(--text-primary)' }}>{user.username}</span>
                       {user.id === currentUser.id && (
@@ -231,6 +261,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         onClose={() => { setShowCreateModal(false); resetForm(); }}
         onSubmit={handleCreateUser}
         onFormChange={setFormData}
+        onUserUpdate={handleUserAvatarUpdate}
       />
 
       <UserFormModal
@@ -242,6 +273,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         onClose={() => { setShowEditModal(false); resetForm(); }}
         onSubmit={handleUpdateUser}
         onFormChange={setFormData}
+        onUserUpdate={handleUserAvatarUpdate}
       />
 
       <DeleteConfirmModal
@@ -256,10 +288,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         visible={showResetPasswordModal}
         user={selectedUser}
         newPassword={newPassword}
+        confirmPassword={confirmPassword}
         loading={formLoading}
-        onClose={() => { setShowResetPasswordModal(false); setNewPassword(''); }}
+        onClose={() => { setShowResetPasswordModal(false); setNewPassword(''); setConfirmPassword(''); }}
         onConfirm={handleResetPassword}
         onPasswordChange={setNewPassword}
+        onConfirmPasswordChange={setConfirmPassword}
       />
     </div>
   );

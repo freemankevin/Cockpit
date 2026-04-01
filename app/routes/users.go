@@ -1,8 +1,13 @@
 package routes
 
 import (
+	"encoding/base64"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"cockpit/database"
@@ -34,6 +39,9 @@ func UserRoutes(r *gin.RouterGroup, db *gorm.DB) {
 
 	// 重置密码 - Admin only
 	users.POST("/:id/reset-password", middleware.RequireAdmin(), resetPasswordHandler(db))
+
+	// 上传头像（管理员为特定用户上传） - Admin only
+	users.POST("/:id/avatar", middleware.RequireAdmin(), uploadUserAvatarHandler(db))
 
 	// 解锁用户 - Admin only
 	users.POST("/:id/unlock", middleware.RequireAdmin(), unlockUserHandler(db))
@@ -544,6 +552,143 @@ func listAuditLogsHandler(db *gorm.DB) gin.HandlerFunc {
 				"total":     total,
 				"page":      page,
 				"page_size": pageSize,
+			},
+		})
+	}
+}
+
+// uploadUserAvatarHandler 管理员为特定用户上传头像
+func uploadUserAvatarHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "无效的用户ID",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 获取用户
+		user, err := database.GetUserByID(uint(id))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "获取用户信息失败",
+				"data":    nil,
+			})
+			return
+		}
+
+		if user == nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"code":    404,
+				"message": "用户不存在",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 解析 base64 JSON 上传
+		var req struct {
+			Avatar string `json:"avatar" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "请提供有效的头像数据",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 解析 base64 数据
+		base64Data := req.Avatar
+		// 移除 data:image/xxx;base64, 前缀
+		if strings.Contains(base64Data, ";base64,") {
+			parts := strings.Split(base64Data, ";base64,")
+			if len(parts) == 2 {
+				base64Data = parts[1]
+			}
+		}
+
+		imageData, err := base64.StdEncoding.DecodeString(base64Data)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "Base64解码失败",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 检查大小
+		if len(imageData) > MaxAvatarSize {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "图片大小超过限制（最大10MB）",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 创建上传目录
+		if err := os.MkdirAll(AvatarUploadDir, 0755); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "创建上传目录失败",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 生成文件名
+		filename := fmt.Sprintf("%d_%d.jpg", user.ID, time.Now().Unix())
+		filePath := filepath.Join(AvatarUploadDir, filename)
+
+		// 保存文件
+		if err := os.WriteFile(filePath, imageData, 0644); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "保存文件失败",
+				"data":    nil,
+			})
+			return
+		}
+
+		avatarURL := "/" + filePath
+
+		// 删除旧头像文件（如果存在且不是外部URL）
+		if user.Avatar != "" && strings.HasPrefix(user.Avatar, "/uploads/avatars/") {
+			oldFile := strings.TrimPrefix(user.Avatar, "/")
+			if _, err := os.Stat(oldFile); err == nil {
+				os.Remove(oldFile)
+			}
+		}
+
+		// 更新用户头像URL
+		user.Avatar = avatarURL
+		if err := database.UpdateUser(user); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":    500,
+				"message": "更新头像失败",
+				"data":    nil,
+			})
+			return
+		}
+
+		// 记录审计日志
+		currentUser := middleware.GetCurrentUser(c)
+		recordAuditLog(db, &currentUser.ID, currentUser.Username, "update_user_avatar", "user", user.ID,
+			"更新用户头像: "+user.Username, c, "success")
+
+		c.JSON(http.StatusOK, gin.H{
+			"code":    0,
+			"message": "头像上传成功",
+			"data": gin.H{
+				"avatar": avatarURL,
+				"user":   user.ToResponse(),
 			},
 		})
 	}

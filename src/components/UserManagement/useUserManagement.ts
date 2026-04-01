@@ -1,7 +1,18 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { usersApi } from '../../services/authApi';
 import type { User, UserRole, CreateUserRequest, UpdateUserRequest } from '../../types';
 import { useToast } from '../../hooks/useToast';
+
+// Module-level cache for user data (persists across component mounts)
+interface UserCache {
+  users: User[];
+  total: number;
+  page: number;
+  timestamp: number;
+}
+
+let userCache: UserCache | null = null;
+const CACHE_TTL = 30 * 1000; // 30 seconds cache TTL
 
 interface UseUserManagementReturn {
   users: User[];
@@ -16,6 +27,7 @@ interface UseUserManagementReturn {
   showResetPasswordModal: boolean;
   formLoading: boolean;
   newPassword: string;
+  confirmPassword: string;
   fetchUsers: () => Promise<void>;
   setPage: (page: number) => void;
   setShowCreateModal: (show: boolean) => void;
@@ -25,21 +37,43 @@ interface UseUserManagementReturn {
   setFormData: (data: CreateUserRequest) => void;
   setSelectedUser: (user: User | null) => void;
   setNewPassword: (password: string) => void;
+  setConfirmPassword: (password: string) => void;
   handleCreateUser: () => Promise<void>;
   handleUpdateUser: () => Promise<void>;
   handleDeleteUser: () => Promise<void>;
   handleResetPassword: () => Promise<void>;
+  handleUserAvatarUpdate: (user: User) => void;
   openEditModal: (user: User) => void;
   resetForm: () => void;
 }
 
 export function useUserManagement(): UseUserManagementReturn {
   const toast = useToast();
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [users, setUsers] = useState<User[]>(() => {
+    // Initialize with cached data if available and valid
+    if (userCache && Date.now() - userCache.timestamp < CACHE_TTL) {
+      return userCache.users;
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    // Only show loading if no valid cache exists
+    return !userCache || Date.now() - userCache.timestamp >= CACHE_TTL;
+  });
+  const [total, setTotal] = useState(() => {
+    if (userCache && Date.now() - userCache.timestamp < CACHE_TTL) {
+      return userCache.total;
+    }
+    return 0;
+  });
+  const [page, setPage] = useState(() => {
+    if (userCache && Date.now() - userCache.timestamp < CACHE_TTL) {
+      return userCache.page;
+    }
+    return 1;
+  });
   const pageSize = 20;
+  const initialLoadDone = useRef(false);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -57,27 +91,63 @@ export function useUserManagement(): UseUserManagementReturn {
     phone: '',
   });
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch users
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
+  // Fetch users with cache support
+  const fetchUsers = useCallback(async (forceRefresh = false) => {
+    // Check if we have valid cache and not forcing refresh
+    const hasValidCache = userCache && Date.now() - userCache.timestamp < CACHE_TTL;
+    
+    if (hasValidCache && !forceRefresh && userCache) {
+      // Use cached data, no loading spinner needed
+      setUsers(userCache.users);
+      setTotal(userCache.total);
+      setLoading(false);
+      return;
+    }
+
+    // Show loading only if no cached data to display
+    if (users.length === 0) {
+      setLoading(true);
+    }
+    
     try {
       const result = await usersApi.getUsers(page, pageSize);
       if (result.code === 0 && result.data) {
-        setUsers(result.data.list);
-        setTotal(result.data.total);
+        const newUsers = result.data.list;
+        const newTotal = result.data.total;
+        setUsers(newUsers);
+        setTotal(newTotal);
+        // Update cache
+        userCache = {
+          users: newUsers,
+          total: newTotal,
+          page: page,
+          timestamp: Date.now(),
+        };
       }
     } catch {
-      toast.error('获取用户列表失败');
+      console.error('Failed to fetch users');
     } finally {
       setLoading(false);
     }
-  }, [page, toast]);
+  }, [page, users.length]);
 
+  // Initial load: use cache if valid, otherwise fetch
   useEffect(() => {
-    fetchUsers();
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      fetchUsers();
+    }
   }, [fetchUsers]);
+
+  // Refetch when page changes (force refresh)
+  useEffect(() => {
+    if (initialLoadDone.current && userCache?.page !== page) {
+      fetchUsers(true);
+    }
+  }, [page]);
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -105,7 +175,7 @@ export function useUserManagement(): UseUserManagementReturn {
         toast.success('用户创建成功');
         setShowCreateModal(false);
         resetForm();
-        fetchUsers();
+        fetchUsers(true); // Force refresh after create
       } else {
         toast.error(result.message || '创建失败');
       }
@@ -132,7 +202,7 @@ export function useUserManagement(): UseUserManagementReturn {
         toast.success('用户更新成功');
         setShowEditModal(false);
         resetForm();
-        fetchUsers();
+        fetchUsers(true); // Force refresh after update
       } else {
         toast.error(result.message || '更新失败');
       }
@@ -154,7 +224,7 @@ export function useUserManagement(): UseUserManagementReturn {
         toast.success('用户删除成功');
         setShowDeleteConfirm(false);
         setSelectedUser(null);
-        fetchUsers();
+        fetchUsers(true); // Force refresh after delete
       } else {
         toast.error(result.message || '删除失败');
       }
@@ -177,6 +247,11 @@ export function useUserManagement(): UseUserManagementReturn {
       return;
     }
 
+    if (newPassword !== confirmPassword) {
+      toast.error('两次输入的密码不一致');
+      return;
+    }
+
     setFormLoading(true);
     try {
       const result = await usersApi.resetPassword(selectedUser.id, { new_password: newPassword });
@@ -184,6 +259,7 @@ export function useUserManagement(): UseUserManagementReturn {
         toast.success('密码重置成功');
         setShowResetPasswordModal(false);
         setNewPassword('');
+        setConfirmPassword('');
         setSelectedUser(null);
       } else {
         toast.error(result.message || '重置失败');
@@ -193,7 +269,7 @@ export function useUserManagement(): UseUserManagementReturn {
     } finally {
       setFormLoading(false);
     }
-  }, [selectedUser, newPassword, toast]);
+  }, [selectedUser, newPassword, confirmPassword, toast]);
 
   // Open edit modal
   const openEditModal = useCallback((user: User) => {
@@ -208,6 +284,26 @@ export function useUserManagement(): UseUserManagementReturn {
     setShowEditModal(true);
   }, []);
 
+  // Handle user avatar update - update the user in the list
+  const handleUserAvatarUpdate = useCallback((updatedUser: User) => {
+    // Update the user in the local list
+    setUsers(prevUsers => 
+      prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u)
+    );
+    // Update cache
+    if (userCache) {
+      userCache = {
+        ...userCache,
+        users: userCache.users.map(u => u.id === updatedUser.id ? updatedUser : u),
+        timestamp: Date.now(),
+      };
+    }
+    // Update selectedUser if it's the same user
+    if (selectedUser?.id === updatedUser.id) {
+      setSelectedUser(updatedUser);
+    }
+  }, [selectedUser]);
+
   return {
     users,
     loading,
@@ -221,6 +317,7 @@ export function useUserManagement(): UseUserManagementReturn {
     showResetPasswordModal,
     formLoading,
     newPassword,
+    confirmPassword,
     fetchUsers,
     setPage,
     setShowCreateModal,
@@ -230,10 +327,12 @@ export function useUserManagement(): UseUserManagementReturn {
     setFormData,
     setSelectedUser,
     setNewPassword,
+    setConfirmPassword,
     handleCreateUser,
     handleUpdateUser,
     handleDeleteUser,
     handleResetPassword,
+    handleUserAvatarUpdate,
     openEditModal,
     resetForm,
   };

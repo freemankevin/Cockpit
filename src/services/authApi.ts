@@ -195,6 +195,14 @@ export const authApi = {
 
     return result;
   },
+
+  // Upload avatar for specific user (Admin only - base64)
+  uploadAvatarForUser: async (userId: number, avatarData: string): Promise<ApiResult<{ avatar: string; user: User }>> => {
+    return apiRequest<{ avatar: string; user: User }>(`/users/${userId}/avatar`, {
+      method: 'POST',
+      body: JSON.stringify({ avatar: avatarData }),
+    });
+  },
 };
 
 // Users API (Admin only)

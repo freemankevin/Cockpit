@@ -250,7 +250,8 @@ export const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: 'var(--text-primary)',
     margin: 0,
-    display: 'flex',
+    display: 'inline-flex',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 'var(--space-2)',
   },
@@ -322,8 +323,10 @@ export const styles: Record<string, React.CSSProperties> = {
   
   // Cancel button - Railway 次要按钮
   cancelButton: {
-    display: 'flex',
+    display: 'inline-flex',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 'var(--space-2)',
     padding: 'var(--space-2) var(--space-4)',
     fontSize: '13px',
@@ -338,8 +341,10 @@ export const styles: Record<string, React.CSSProperties> = {
   
   // Confirm button - Railway 主按钮
   confirmButton: {
-    display: 'flex',
+    display: 'inline-flex',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 'var(--space-2)',
     padding: 'var(--space-2) var(--space-4)',
     fontSize: '13px',
@@ -354,8 +359,10 @@ export const styles: Record<string, React.CSSProperties> = {
   
   // Delete confirm button - Railway 危险主按钮
   deleteConfirmButton: {
-    display: 'flex',
+    display: 'inline-flex',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 'var(--space-2)',
     padding: 'var(--space-2) var(--space-4)',
     fontSize: '13px',
@@ -389,6 +396,106 @@ export const styles: Record<string, React.CSSProperties> = {
     boxSizing: 'border-box',
     outline: 'none',
     transition: 'border-color var(--duration-fast) var(--ease-out)',
+  },
+
+  // Custom Select - Railway Design 自定义下拉框
+  customSelect: {
+    position: 'relative' as const,
+    width: '100%',
+  },
+
+  customSelectTrigger: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 'var(--space-2) var(--space-3)',
+    fontSize: '14px',
+    fontWeight: 500,
+    color: 'var(--text-primary)',
+    border: '0.5px solid var(--border-default)',
+    borderRadius: 'var(--radius-default)',
+    backgroundColor: 'var(--bg-overlay)',
+    cursor: 'pointer',
+    boxSizing: 'border-box',
+    transition: 'all var(--duration-fast) var(--ease-out)',
+    userSelect: 'none' as const,
+  },
+
+  customSelectTriggerDisabled: {
+    opacity: 0.6,
+    cursor: 'not-allowed' as const,
+  },
+
+  customSelectTriggerOpen: {
+    borderColor: 'var(--accent)',
+  },
+
+  customSelectValue: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-2)',
+  },
+
+  customSelectArrow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'var(--text-tertiary)',
+    transition: 'transform var(--duration-fast) var(--ease-out)',
+  },
+
+  customSelectArrowOpen: {
+    transform: 'rotate(180deg)',
+  },
+
+  customSelectDropdown: {
+    position: 'absolute' as const,
+    top: 'calc(100% + 4px)',
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    backgroundColor: 'var(--bg-overlay)',
+    border: '0.5px solid var(--border-default)',
+    borderRadius: 'var(--radius-default)',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+    overflow: 'hidden',
+    animation: 'dropdownSlideIn var(--duration-fast) var(--ease-out)',
+  },
+
+  customSelectOption: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-2)',
+    padding: 'var(--space-2) var(--space-3)',
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    transition: 'all var(--duration-fast) var(--ease-out)',
+    userSelect: 'none' as const,
+  },
+
+  customSelectOptionHover: {
+    backgroundColor: 'var(--bg-hover)',
+    color: 'var(--text-primary)',
+  },
+
+  customSelectOptionSelected: {
+    backgroundColor: 'var(--accent-muted)',
+    color: 'var(--accent)',
+    fontWeight: 500,
+  },
+
+  customSelectOptionActive: {
+    backgroundColor: 'var(--accent)',
+    color: 'white',
+  },
+
+  customSelectCheck: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 'auto',
   },
 };
 

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { User, UserRole, AuditLog, CreateUserRequest } from '../../types';
 import { styles } from './styles';
+import { authApi } from '../../services/authApi';
+import { useToast } from '../../hooks/useToast';
 import {
   X,
   Plus,
@@ -11,6 +13,14 @@ import {
   BookText,
   Eye,
   EyeOff,
+  Camera,
+  UserCircle,
+  Mail,
+  Phone,
+  ShieldCheck,
+  Lock,
+  AlertCircle,
+  ChevronDown,
 } from 'lucide-react';
 
 // Password input with toggle visibility
@@ -52,6 +62,182 @@ const PasswordInput: React.FC<PasswordInputProps> = ({ value, onChange, placehol
   );
 };
 
+// Custom Select Component - Railway Design
+interface SelectOption {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+interface CustomSelectProps {
+  value: string;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+}
+
+const CustomSelect: React.FC<CustomSelectProps> = ({
+  value,
+  options,
+  onChange,
+  disabled = false,
+  placeholder = 'Select...',
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number>(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (disabled) return;
+
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (isOpen && hoveredIndex >= 0) {
+            onChange(options[hoveredIndex].value);
+            setIsOpen(false);
+            setHoveredIndex(-1);
+          } else {
+            setIsOpen(!isOpen);
+          }
+          break;
+        case 'Escape':
+          setIsOpen(false);
+          setHoveredIndex(-1);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          if (!isOpen) {
+            setIsOpen(true);
+            setHoveredIndex(0);
+          } else {
+            setHoveredIndex((prev) => (prev + 1) % options.length);
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (!isOpen) {
+            setIsOpen(true);
+            setHoveredIndex(options.length - 1);
+          } else {
+            setHoveredIndex((prev) => (prev - 1 + options.length) % options.length);
+          }
+          break;
+      }
+    },
+    [disabled, isOpen, hoveredIndex, options, onChange]
+  );
+
+  const handleOptionClick = (optionValue: string) => {
+    onChange(optionValue);
+    setIsOpen(false);
+    setHoveredIndex(-1);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      style={styles.customSelect}
+      onKeyDown={handleKeyDown}
+      tabIndex={disabled ? -1 : 0}
+    >
+      <div
+        style={{
+          ...styles.customSelectTrigger,
+          ...(isOpen ? styles.customSelectTriggerOpen : {}),
+          ...(disabled ? styles.customSelectTriggerDisabled : {}),
+        }}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+      >
+        <span style={styles.customSelectValue}>
+          {selectedOption ? (
+            <>
+              {selectedOption.icon}
+              {selectedOption.label}
+            </>
+          ) : (
+            <span style={{ color: 'var(--text-tertiary)' }}>{placeholder}</span>
+          )}
+        </span>
+        <span
+          style={{
+            ...styles.customSelectArrow,
+            ...(isOpen ? styles.customSelectArrowOpen : {}),
+          }}
+        >
+          <ChevronDown className="w-4 h-4" />
+        </span>
+      </div>
+
+      {isOpen && (
+        <div style={styles.customSelectDropdown}>
+          {options.map((option, index) => {
+            const isSelected = option.value === value;
+            const isHovered = index === hoveredIndex;
+
+            let optionStyle = { ...styles.customSelectOption };
+            if (isSelected) {
+              optionStyle = { ...optionStyle, ...styles.customSelectOptionSelected };
+            } else if (isHovered) {
+              optionStyle = { ...optionStyle, ...styles.customSelectOptionHover };
+            }
+
+            return (
+              <div
+                key={option.value}
+                style={optionStyle}
+                onClick={() => handleOptionClick(option.value)}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(-1)}
+              >
+                {option.icon}
+                <span>{option.label}</span>
+                {isSelected && (
+                  <span style={styles.customSelectCheck}>
+                    <Check className="w-4 h-4" />
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Helper function to get avatar URL
+const getAvatarUrl = (user: User | null): string => {
+  if (user?.avatar) {
+    if (user.avatar.startsWith('http')) return user.avatar;
+    return `http://127.0.0.1:8000${user.avatar}`;
+  }
+  return '/cat.jpg';
+};
+
 // User Form Modal
 interface UserFormModalProps {
   mode: 'create' | 'edit';
@@ -62,22 +248,93 @@ interface UserFormModalProps {
   onClose: () => void;
   onSubmit: () => void;
   onFormChange: (data: CreateUserRequest) => void;
+  onUserUpdate?: (user: User) => void;
 }
 
 export const UserFormModal: React.FC<UserFormModalProps> = ({
   mode,
   visible,
+  user,
   formData,
   loading,
   onClose,
   onSubmit,
   onFormChange,
+  onUserUpdate,
 }) => {
+  const toast = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
   if (!visible) return null;
+
+  // Check if user is default admin (username === 'admin')
+  const isDefaultAdmin = mode === 'edit' && user?.username === 'admin';
+  
+  // Get avatar URL with preview support
+  const getDisplayAvatarUrl = () => {
+    if (avatarPreview) return avatarPreview;
+    if (user?.avatar) {
+      if (user.avatar.startsWith('http')) return user.avatar;
+      return `http://127.0.0.1:8000${user.avatar}`;
+    }
+    return '/cat.jpg';
+  };
+
+  // Handle avatar file selection - auto upload on select
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Reset input to allow re-selecting same file
+    e.target.value = '';
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('错误', '请选择有效的图片文件');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('错误', '图片大小不能超过 10MB');
+      return;
+    }
+
+    // Create preview and upload immediately
+    setAvatarLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const avatarData = event.target?.result as string;
+      setAvatarPreview(avatarData);
+      
+      try {
+        // Use usersApi to upload avatar for the specific user
+        const result = await authApi.uploadAvatarForUser(user.id, avatarData);
+        if (result.code === 0 && result.data?.user) {
+          if (onUserUpdate) {
+            onUserUpdate(result.data.user);
+          }
+          toast.success('成功', '头像更新成功');
+          setAvatarPreview(null);
+        } else {
+          toast.error('错误', result.message || '头像上传失败');
+          setAvatarPreview(null);
+        }
+      } catch {
+        toast.error('错误', '头像上传失败');
+        setAvatarPreview(null);
+      } finally {
+        setAvatarLoading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div style={styles.modalOverlay}>
-      <div style={styles.modal}>
+      <div style={{ ...styles.modal, maxWidth: '520px' }}>
         <div style={styles.modalHeader}>
           <h3 style={styles.modalTitle}>
             {mode === 'create' ? 'Create User' : 'Edit User'}
@@ -87,16 +344,142 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           </button>
         </div>
         <div style={styles.modalBody}>
+          {mode === 'edit' && user && (
+            // Avatar section with upload capability (circular)
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-4)',
+              marginBottom: 'var(--space-5)',
+              paddingBottom: 'var(--space-4)',
+              borderBottom: '0.5px solid var(--border-subtle)',
+            }}>
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--bg-tertiary)',
+                  border: avatarLoading ? '2px solid var(--accent)' : '1.5px solid var(--border-default)',
+                  flexShrink: 0,
+                  cursor: 'pointer',
+                  position: 'relative',
+                }}
+                onClick={() => !avatarLoading && fileInputRef.current?.click()}
+              >
+                <img
+                  src={getDisplayAvatarUrl()}
+                  alt={user.username}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                {/* Hover overlay for upload */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    opacity: avatarLoading ? 1 : 0,
+                    transition: 'opacity 150ms ease-out',
+                    borderRadius: '50%',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!avatarLoading) {
+                      e.currentTarget.style.opacity = '1';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!avatarLoading) {
+                      e.currentTarget.style.opacity = '0';
+                    }
+                  }}
+                >
+                  {avatarLoading ? (
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  ) : (
+                    <>
+                      <Camera className="w-5 h-5 text-white" />
+                      <span style={{ color: 'white', fontSize: '11px', marginTop: '4px' }}>Upload</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  marginBottom: '2px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  {user.username}
+                  {isDefaultAdmin && (
+                    <span style={{
+                      fontSize: '11px',
+                      padding: '2px 6px',
+                      background: 'var(--accent-muted)',
+                      color: 'var(--accent)',
+                      borderRadius: '4px',
+                      fontWeight: 500,
+                    }}>
+                      Default Admin
+                    </span>
+                  )}
+                </p>
+                <p style={{
+                  fontSize: '12px',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '4px',
+                }}>
+                  User ID: {user.id}
+                </p>
+                <p style={{
+                  fontSize: '11px',
+                  color: 'var(--text-tertiary)',
+                }}>
+                  Click avatar to upload new image
+                </p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarSelect}
+                style={{ display: 'none' }}
+              />
+            </div>
+          )}
           {mode === 'create' && (
             <>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Username *</label>
+                <label style={{
+                  ...styles.label,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <UserCircle className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                  Username *
+                </label>
                 <input
                   type="text"
                   value={formData.username}
                   onChange={(e) => onFormChange({ ...formData, username: e.target.value })}
-                  placeholder="Enter username"
+                  placeholder="Enter username (at least 3 characters)"
                   style={styles.input}
+                  minLength={3}
+                  maxLength={50}
                 />
               </div>
               <PasswordInput
@@ -107,58 +490,100 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               />
             </>
           )}
+          {/* Role field - disabled for default admin */}
           <div style={styles.formGroup}>
-            <label style={styles.label}>Role</label>
-            <select
+            <label style={{
+              ...styles.label,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}>
+              <ShieldCheck className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+              Role
+              {isDefaultAdmin && (
+                <Lock className="w-3 h-3" style={{ color: 'var(--text-tertiary)' }} />
+              )}
+            </label>
+            <CustomSelect
               value={formData.role}
-              onChange={(e) => onFormChange({ ...formData, role: e.target.value as UserRole })}
-              style={styles.select}
-            >
-              <option value="viewer">Viewer</option>
-              <option value="operator">Operator</option>
-              <option value="admin">Administrator</option>
-            </select>
+              options={[
+                { value: 'viewer', label: 'Viewer' },
+                { value: 'operator', label: 'Operator' },
+                { value: 'admin', label: 'Administrator' },
+              ]}
+              onChange={(value) => onFormChange({ ...formData, role: value as UserRole })}
+              disabled={isDefaultAdmin}
+            />
+            {isDefaultAdmin && (
+              <p style={{
+                fontSize: '12px',
+                color: 'var(--text-tertiary)',
+                marginTop: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}>
+                <AlertCircle className="w-3 h-3" />
+                Default admin role cannot be changed
+              </p>
+            )}
           </div>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Email</label>
+            <label style={{
+              ...styles.label,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}>
+              <Mail className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+              Email Address
+            </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => onFormChange({ ...formData, email: e.target.value })}
-              placeholder="Enter email"
+              placeholder="Enter email address (optional)"
               style={styles.input}
             />
           </div>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Phone</label>
+            <label style={{
+              ...styles.label,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}>
+              <Phone className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+              Phone Number
+            </label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => onFormChange({ ...formData, phone: e.target.value })}
-              placeholder="Enter phone number"
+              placeholder="Enter phone number (optional)"
               style={styles.input}
             />
           </div>
         </div>
         <div style={styles.modalFooter}>
           <button onClick={onClose} style={styles.cancelButton}>
-            <X className="w-4 h-4" style={{ marginRight: '6px' }} />
-            Cancel
+            <X className="w-4 h-4" />
+            <span>Cancel</span>
           </button>
-          <button onClick={onSubmit} disabled={loading} style={styles.confirmButton}>
-            {loading ? (
+          <button onClick={onSubmit} disabled={loading || avatarLoading} style={styles.confirmButton}>
+            {loading || avatarLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" style={{ marginRight: '6px' }} />
-                Processing...
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Processing...</span>
               </>
             ) : (
               <>
                 {mode === 'create' ? (
-                  <Plus className="w-4 h-4" style={{ marginRight: '6px' }} />
+                  <Plus className="w-4 h-4" />
                 ) : (
-                  <Check className="w-4 h-4" style={{ marginRight: '6px' }} />
+                  <Check className="w-4 h-4" />
                 )}
-                {mode === 'create' ? 'Create' : 'Save'}
+                <span>{mode === 'create' ? 'Create' : 'Save Changes'}</span>
               </>
             )}
           </button>
@@ -202,19 +627,19 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
         </div>
         <div style={styles.modalFooter}>
           <button onClick={onClose} style={styles.cancelButton}>
-            <X className="w-4 h-4" style={{ marginRight: '6px' }} />
-            Cancel
+            <X className="w-4 h-4" />
+            <span>Cancel</span>
           </button>
           <button onClick={onConfirm} disabled={loading} style={styles.deleteConfirmButton}>
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" style={{ marginRight: '6px' }} />
-                Deleting...
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Deleting...</span>
               </>
             ) : (
               <>
-                <Trash2 className="w-4 h-4" style={{ marginRight: '6px' }} />
-                Delete
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
               </>
             )}
           </button>
@@ -229,35 +654,51 @@ interface ResetPasswordModalProps {
   visible: boolean;
   user: User | null;
   newPassword: string;
+  confirmPassword: string;
   loading: boolean;
   onClose: () => void;
   onConfirm: () => void;
   onPasswordChange: (password: string) => void;
+  onConfirmPasswordChange: (password: string) => void;
 }
 
 export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   visible,
   user,
   newPassword,
+  confirmPassword,
   loading,
   onClose,
   onConfirm,
   onPasswordChange,
+  onConfirmPasswordChange,
 }) => {
+  const isPasswordValid = newPassword.length >= 6;
+  const isPasswordsMatch = newPassword === confirmPassword && newPassword.length > 0;
+  const isFormValid = isPasswordValid && isPasswordsMatch;
+
   if (!visible || !user) return null;
 
   return (
     <div style={styles.modalOverlay}>
-      <div style={{ ...styles.modal, maxWidth: '400px' }}>
+      <div style={{ ...styles.modal, maxWidth: '440px' }}>
         <div style={styles.modalHeader}>
-          <h3 style={styles.modalTitle}>Reset Password</h3>
+          <h3 style={styles.modalTitle}>
+            <Key className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+            <span>Reset Password</span>
+          </h3>
           <button onClick={onClose} style={styles.closeButton}>
             <X className="w-4 h-4" />
           </button>
         </div>
         <div style={styles.modalBody}>
-          <p style={styles.confirmText}>
-            Set a new password for user <strong>{user.username}</strong>
+          <p style={{
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+            marginBottom: 'var(--space-5)',
+            lineHeight: 1.5,
+          }}>
+            Set a new password for user <strong style={{ color: 'var(--text-primary)' }}>{user.username}</strong>
           </p>
           <PasswordInput
             value={newPassword}
@@ -265,22 +706,78 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             placeholder="Enter new password (at least 6 characters)"
             label="New Password"
           />
+          <PasswordInput
+            value={confirmPassword}
+            onChange={onConfirmPasswordChange}
+            placeholder="Confirm new password"
+            label="Confirm New Password"
+          />
+          {confirmPassword && !isPasswordsMatch && (
+            <p style={{
+              fontSize: '12px',
+              color: 'var(--color-error)',
+              marginTop: '-8px',
+              marginBottom: 'var(--space-4)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}>
+              <X className="w-3 h-3" />
+              Passwords do not match
+            </p>
+          )}
+          {newPassword && !isPasswordValid && (
+            <p style={{
+              fontSize: '12px',
+              color: 'var(--color-error)',
+              marginTop: '-8px',
+              marginBottom: 'var(--space-4)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}>
+              <X className="w-3 h-3" />
+              Password must be at least 6 characters
+            </p>
+          )}
+          {isPasswordValid && isPasswordsMatch && (
+            <p style={{
+              fontSize: '12px',
+              color: 'var(--color-success)',
+              marginTop: '-8px',
+              marginBottom: 'var(--space-4)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}>
+              <Check className="w-3 h-3" />
+              Password is valid
+            </p>
+          )}
         </div>
         <div style={styles.modalFooter}>
           <button onClick={onClose} style={styles.cancelButton}>
-            <X className="w-4 h-4" style={{ marginRight: '6px' }} />
-            Cancel
+            <X className="w-4 h-4" />
+            <span>Cancel</span>
           </button>
-          <button onClick={onConfirm} disabled={loading} style={styles.confirmButton}>
+          <button
+            onClick={onConfirm}
+            disabled={loading || !isFormValid}
+            style={{
+              ...styles.confirmButton,
+              opacity: !isFormValid ? 0.5 : 1,
+              cursor: !isFormValid ? 'not-allowed' : 'pointer',
+            }}
+          >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" style={{ marginRight: '6px' }} />
-                Processing...
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Processing...</span>
               </>
             ) : (
               <>
-                <Key className="w-4 h-4" style={{ marginRight: '6px' }} />
-                Reset Password
+                <Key className="w-4 h-4" />
+                <span>Reset Password</span>
               </>
             )}
           </button>
@@ -308,14 +805,14 @@ export const AuditLogsModal: React.FC<AuditLogsModalProps> = ({
     <div style={styles.modalOverlay}>
       <div style={{ ...styles.modal, maxWidth: '900px', maxHeight: '80vh' }}>
         <div style={styles.modalHeader}>
-          <h3 style={styles.modalTitle}>
-            <BookText className="w-4 h-4" style={{ marginRight: '8px' }} />
-            Audit Logs
-          </h3>
-          <button onClick={onClose} style={styles.closeButton}>
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+            <h3 style={styles.modalTitle}>
+              <BookText className="w-4 h-4" />
+              <span>Audit Logs</span>
+            </h3>
+            <button onClick={onClose} style={styles.closeButton}>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         <div style={{ ...styles.modalBody, padding: 0, maxHeight: '60vh', overflow: 'auto' }}>
           <table style={styles.table}>
             <thead>
