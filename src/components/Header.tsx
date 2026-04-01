@@ -237,17 +237,16 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
               style={{
                 top: notifButtonRef.current ? notifButtonRef.current.getBoundingClientRect().bottom + 8 : 0,
                 right: notifButtonRef.current ? window.innerWidth - notifButtonRef.current.getBoundingClientRect().right : 0,
-                width: '320px',
-                maxHeight: '400px',
+                width: '340px',
+                maxHeight: '420px',
                 zIndex: 1000,
               }}
             >
               <div
-                className="rounded-xl overflow-hidden shadow-lg"
+                className="rounded-xl overflow-hidden"
                 style={{
                   background: 'var(--bg-overlay)',
                   border: '0.5px solid var(--border-default)',
-                  backdropFilter: 'blur(20px)',
                 }}
               >
                 {/* Header */}
@@ -313,53 +312,65 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
                     notifications.map((notif) => (
                       <div
                         key={notif.id}
-                        className={`px-4 py-3 flex items-start gap-3 transition-colors ${
-                          !notif.read ? 'bg-opacity-5' : ''
-                        }`}
+                        className="px-4 py-3 flex items-start gap-3 transition-colors cursor-pointer"
                         style={{
-                          borderBottom: '0.5px solid var(--border-default)',
-                          background: !notif.read ? 'var(--accent-muted)' : 'transparent',
+                          borderBottom: '0.5px solid var(--border-subtle)',
+                          background: !notif.read ? 'var(--accent-subtle)' : 'transparent',
+                        }}
+                        onClick={() => {
+                          if (!notif.read) {
+                            setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                          }
                         }}
                         onMouseEnter={(e) => {
-                          if (notif.read) {
-                            e.currentTarget.style.background = 'var(--bg-tertiary)';
-                          }
+                          e.currentTarget.style.background = notif.read ? 'var(--bg-elevated)' : 'var(--accent-muted)';
                         }}
                         onMouseLeave={(e) => {
-                          if (notif.read) {
-                            e.currentTarget.style.background = 'transparent';
-                          }
+                          e.currentTarget.style.background = !notif.read ? 'var(--accent-subtle)' : 'transparent';
                         }}
                       >
-                        {/* Icon */}
+                        {/* Icon container */}
                         <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
                           style={{
                             background: notif.type === 'success' ? 'var(--color-success-muted)' :
                                        notif.type === 'error' ? 'var(--color-error-muted)' :
-                                       'var(--bg-tertiary)',
+                                       'var(--accent-muted)',
                             color: notif.type === 'success' ? 'var(--color-success)' :
                                    notif.type === 'error' ? 'var(--color-error)' :
                                    'var(--accent)',
                           }}
                         >
                           {notif.type === 'success' ? (
-                            <CheckCircle2 className="w-4 h-4" />
+                            <CheckCircle2 className="w-3.5 h-3.5" />
                           ) : notif.type === 'error' ? (
-                            <X className="w-4 h-4" />
+                            <X className="w-3.5 h-3.5" />
                           ) : (
-                            <Bell className="w-4 h-4" />
+                            <Bell className="w-3.5 h-3.5" />
                           )}
                         </div>
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p
-                            className="text-sm font-medium leading-tight"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
-                            {notif.title}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p
+                              className="text-sm font-medium leading-tight"
+                              style={{ color: 'var(--text-primary)' }}
+                            >
+                              {notif.title}
+                            </p>
+                            {!notif.read && (
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded font-medium uppercase"
+                                style={{
+                                  background: 'var(--accent-muted)',
+                                  color: 'var(--accent)',
+                                }}
+                              >
+                                New
+                              </span>
+                            )}
+                          </div>
                           <p
                             className="text-xs mt-1 leading-relaxed"
                             style={{ color: 'var(--text-secondary)' }}
@@ -381,8 +392,11 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
 
                         {/* Close button */}
                         <button
-                          onClick={() => removeNotification(notif.id)}
-                          className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeNotification(notif.id);
+                          }}
+                          className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors"
                           style={{ color: 'var(--text-tertiary)' }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = 'var(--bg-tertiary)';
@@ -393,7 +407,7 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
                             e.currentTarget.style.color = 'var(--text-tertiary)';
                           }}
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     ))
@@ -449,11 +463,10 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
               }}
             >
               <div
-                className="rounded-xl overflow-hidden shadow-lg"
+                className="rounded-xl overflow-hidden"
                 style={{
                   background: 'var(--bg-overlay)',
                   border: '0.5px solid var(--border-default)',
-                  backdropFilter: 'blur(20px)',
                 }}
               >
                 {/* User info header */}
@@ -486,7 +499,7 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <p
-                        className="text-sm font-medium truncate leading-tight"
+                        className="text-base font-semibold truncate leading-tight"
                         style={{ color: 'var(--text-primary)' }}
                       >
                         {currentUser.username}
@@ -517,11 +530,11 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
                     onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    <Settings
+                    <UserIcon
                       className="w-4 h-4"
                       style={{ color: 'var(--accent)' }}
                     />
-                    <span>User Settings</span>
+                    <span>Account Settings</span>
                   </button>
 
                   {/* Divider */}
@@ -577,12 +590,6 @@ const Header = ({ currentUser, onLogout, onUserUpdate }: HeaderProps) => {
           currentUser={currentUser}
           onUserUpdate={(user) => {
             onUserUpdate?.(user);
-            // Don't close modal, just add notification
-            addNotification({
-              type: 'success',
-              title: 'Profile Updated',
-              message: 'Your profile has been updated successfully.',
-            });
           }}
           onNotification={(notification) => {
             addNotification(notification);

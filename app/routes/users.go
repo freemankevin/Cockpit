@@ -312,6 +312,16 @@ func deleteUserHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
+		// 不能删除默认超管用户 admin
+		if user.Username == "admin" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    400,
+				"message": "默认超管用户 admin 不可删除",
+				"data":    nil,
+			})
+			return
+		}
+
 		// 删除用户
 		if err := database.DeleteUser(uint(id)); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{

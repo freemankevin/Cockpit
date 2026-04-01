@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { usersApi } from '../../services/authApi';
-import type { User, UserRole, CreateUserRequest, UpdateUserRequest, AuditLog } from '../../types';
+import type { User, UserRole, CreateUserRequest, UpdateUserRequest } from '../../types';
 import { useToast } from '../../hooks/useToast';
 
 interface UseUserManagementReturn {
@@ -8,10 +8,6 @@ interface UseUserManagementReturn {
   loading: boolean;
   total: number;
   page: number;
-  auditLogs: AuditLog[];
-  auditTotal: number;
-  auditPage: number;
-  showAuditLogs: boolean;
   formData: CreateUserRequest;
   selectedUser: User | null;
   showCreateModal: boolean;
@@ -22,8 +18,6 @@ interface UseUserManagementReturn {
   newPassword: string;
   fetchUsers: () => Promise<void>;
   setPage: (page: number) => void;
-  setAuditPage: (page: number) => void;
-  setShowAuditLogs: (show: boolean) => void;
   setShowCreateModal: (show: boolean) => void;
   setShowEditModal: (show: boolean) => void;
   setShowDeleteConfirm: (show: boolean) => void;
@@ -65,12 +59,6 @@ export function useUserManagement(): UseUserManagementReturn {
   const [newPassword, setNewPassword] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // Audit logs
-  const [showAuditLogs, setShowAuditLogs] = useState(false);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [auditTotal, setAuditTotal] = useState(0);
-  const [auditPage, setAuditPage] = useState(1);
-
   // Fetch users
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -90,25 +78,6 @@ export function useUserManagement(): UseUserManagementReturn {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
-
-  // Fetch audit logs
-  const fetchAuditLogs = useCallback(async () => {
-    try {
-      const result = await usersApi.getAuditLogs(auditPage, 20);
-      if (result.code === 0 && result.data) {
-        setAuditLogs(result.data.list);
-        setAuditTotal(result.data.total);
-      }
-    } catch {
-      toast.error('获取审计日志失败');
-    }
-  }, [auditPage, toast]);
-
-  useEffect(() => {
-    if (showAuditLogs) {
-      fetchAuditLogs();
-    }
-  }, [showAuditLogs, fetchAuditLogs]);
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -244,10 +213,6 @@ export function useUserManagement(): UseUserManagementReturn {
     loading,
     total,
     page,
-    auditLogs,
-    auditTotal,
-    auditPage,
-    showAuditLogs,
     formData,
     selectedUser,
     showCreateModal,
@@ -258,8 +223,6 @@ export function useUserManagement(): UseUserManagementReturn {
     newPassword,
     fetchUsers,
     setPage,
-    setAuditPage,
-    setShowAuditLogs,
     setShowCreateModal,
     setShowEditModal,
     setShowDeleteConfirm,

@@ -7,6 +7,7 @@ import TerminalModal from './components/TerminalModal';
 import SFTPModal from './components/SFTPModal';
 import LoginPage from './components/LoginPage';
 import PlaceholderPage from './components/PlaceholderPage';
+import UserManagement from './components/UserManagement';
 import { ToastContainer } from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { useDialog } from './components/Dialog';
@@ -324,6 +325,8 @@ function App() {
               onCopyHost={handleCopyHost}
               onRefresh={loadHosts}
             />
+          ) : currentPage === 'settings-users' ? (
+            <UserManagement currentUser={currentUser} />
           ) : (
             <PlaceholderPage page={currentPage} />
           )}

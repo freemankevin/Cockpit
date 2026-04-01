@@ -39,7 +39,7 @@ const PasswordInput: React.FC<PasswordInputProps> = ({ value, onChange, placehol
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           className="password-toggle-btn"
-          title={showPassword ? '隐藏密码' : '显示密码'}
+          title={showPassword ? 'Hide password' : 'Show password'}
         >
           {showPassword ? (
             <EyeOff className="w-4 h-4" />

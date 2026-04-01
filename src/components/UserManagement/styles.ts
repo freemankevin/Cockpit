@@ -1,332 +1,414 @@
-// User management styles
+// User management styles - Railway Design System
 import type { UserRole } from '../../types';
 
 export const styles: Record<string, React.CSSProperties> = {
+  // Container - Railway 风格
   container: {
-    padding: '24px',
+    padding: 'var(--space-6)',
     maxWidth: '1200px',
     margin: '0 auto',
   },
+  
+  // Header section
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: '24px',
+    marginBottom: 'var(--space-6)',
   },
+  
+  // Title - Railway 文字层级
   title: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    fontSize: '24px',
+    gap: 'var(--space-2)',
+    fontSize: '20px',
     fontWeight: 600,
-    color: '#1f2937',
+    color: 'var(--text-primary)',
     margin: 0,
   },
+  
   titleIcon: {
-    color: '#667eea',
+    color: 'var(--accent)',
   },
+  
   subtitle: {
-    fontSize: '14px',
-    color: '#6b7280',
-    margin: '4px 0 0',
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    margin: 'var(--space-1) 0 0',
   },
+  
   headerActions: {
     display: 'flex',
-    gap: '12px',
+    gap: 'var(--space-3)',
   },
-  auditButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '10px 16px',
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#4b5563',
-    backgroundColor: '#f3f4f6',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    cursor: 'pointer',
-  },
+  
+  // Create button - Railway 主按钮（纯色，无渐变）
   createButton: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    padding: '10px 16px',
-    fontSize: '14px',
+    gap: 'var(--space-2)',
+    padding: 'var(--space-2) var(--space-4)',
+    fontSize: '13px',
     fontWeight: 500,
     color: 'white',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: 'var(--accent)',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-default)',
     cursor: 'pointer',
+    transition: 'background var(--duration-fast) var(--ease-out)',
   },
+  
+  // Table container - Railway 卡片风格
   tableContainer: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'var(--bg-elevated)',
+    borderRadius: 'var(--radius-md)',
+    border: '0.5px solid var(--border-default)',
     overflow: 'hidden',
+    // Railway 规范：禁止使用 box-shadow
   },
+  
+  // Loading state - Railway 风格（仅显示 spinner，无文字）
   loading: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
-    padding: '48px',
-    color: '#6b7280',
+    padding: 'var(--space-12)',
   },
+  
   loadingIcon: {
-    fontSize: '20px',
+    color: 'var(--accent)',
     animation: 'spin 1s linear infinite',
   },
+  
+  // Empty state - Railway 风格
   empty: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '48px',
-    color: '#9ca3af',
+    padding: 'var(--space-12)',
+    color: 'var(--text-tertiary)',
   },
+  
   emptyIcon: {
-    fontSize: '48px',
-    marginBottom: '12px',
+    color: 'var(--text-tertiary)',
+    marginBottom: 'var(--space-3)',
   },
+  
+  emptyText: {
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
+  },
+  
+  // Table - Railway 数据表格
   table: {
     width: '100%',
     borderCollapse: 'collapse',
   },
+  
+  // Table header - Railway 风格
   th: {
-    padding: '12px 16px',
+    padding: 'var(--space-3) var(--space-4)',
     textAlign: 'left',
-    fontSize: '12px',
-    fontWeight: 600,
-    color: '#6b7280',
-    backgroundColor: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb',
+    fontSize: '11px',
+    fontWeight: 500,
+    color: 'var(--text-tertiary)',
+    backgroundColor: 'var(--bg-surface)',
+    borderBottom: '0.5px solid var(--border-subtle)',
     textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.06em',
   },
+  
+  // Table row
   tr: {
-    borderBottom: '1px solid #f3f4f6',
+    borderBottom: '0.5px solid var(--border-subtle)',
+    transition: 'background var(--duration-fast) var(--ease-out)',
   },
+  
+  // Table cell
   td: {
-    padding: '12px 16px',
-    fontSize: '14px',
-    color: '#374151',
+    padding: 'var(--space-3) var(--space-4)',
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    verticalAlign: 'middle',
   },
+  
+  // User name cell with avatar
   userName: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: 'var(--space-3)',
   },
+  
+  // Avatar - Railway 风格
   avatar: {
     width: '32px',
     height: '32px',
-    borderRadius: '8px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
+    borderRadius: 'var(--radius-default)',
+    background: 'var(--accent-muted)',
+    border: '0.5px solid var(--accent)',
+    color: 'var(--accent)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: 600,
   },
+  
+  // Current user badge - Railway 风格
   currentUserBadge: {
-    padding: '2px 6px',
+    padding: '2px var(--space-2)',
     fontSize: '10px',
     fontWeight: 500,
-    color: '#667eea',
-    backgroundColor: '#eef2ff',
-    borderRadius: '4px',
+    color: 'var(--accent)',
+    backgroundColor: 'var(--accent-muted)',
+    borderRadius: 'var(--radius-sm)',
   },
+  
+  // Status styles - Railway 语义色
   statusActive: {
-    color: '#059669',
+    color: 'var(--color-success-text)',
     fontWeight: 500,
   },
+  
   statusInactive: {
-    color: '#dc2626',
+    color: 'var(--color-error-text)',
     fontWeight: 500,
   },
+  
+  // Actions container
   actions: {
     display: 'flex',
-    gap: '4px',
+    gap: 'var(--space-1)',
   },
+  
+  // Action button - Railway 幽灵按钮
   actionButton: {
-    padding: '6px 8px',
+    padding: 'var(--space-1) var(--space-2)',
     border: 'none',
     backgroundColor: 'transparent',
-    color: '#6b7280',
+    color: 'var(--text-tertiary)',
     cursor: 'pointer',
-    borderRadius: '4px',
+    borderRadius: 'var(--radius-default)',
     fontSize: '14px',
+    transition: 'background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out)',
   },
+  
+  // Delete button - Railway 危险按钮
   deleteButton: {
-    padding: '6px 8px',
+    padding: 'var(--space-1) var(--space-2)',
     border: 'none',
     backgroundColor: 'transparent',
-    color: '#dc2626',
+    color: 'var(--color-error-text)',
     cursor: 'pointer',
-    borderRadius: '4px',
+    borderRadius: 'var(--radius-default)',
     fontSize: '14px',
+    transition: 'background var(--duration-fast) var(--ease-out)',
   },
+  
+  // Modal overlay - Railway Modal 背景
   modalOverlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(11, 13, 15, 0.85)',
+    backdropFilter: 'blur(8px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
   },
+  
+  // Modal - Railway 风格
   modal: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
+    backgroundColor: 'var(--bg-overlay)',
+    borderRadius: 'var(--radius-lg)',
+    border: '0.5px solid var(--border-default)',
     width: '100%',
-    maxWidth: '500px',
+    maxWidth: '480px',
     maxHeight: '90vh',
     overflow: 'hidden',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+    // Railway 规范：Modal 可使用轻微阴影
+    boxShadow: '0 16px 48px rgba(0, 0, 0, 0.4)',
   },
+  
+  // Modal header - Railway 风格
   modalHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '16px 20px',
-    borderBottom: '1px solid #e5e7eb',
+    padding: 'var(--space-5) var(--space-6)',
+    borderBottom: '0.5px solid var(--border-subtle)',
+    background: 'var(--bg-elevated)',
   },
+  
   modalTitle: {
-    fontSize: '18px',
+    fontSize: '16px',
     fontWeight: 600,
-    color: '#1f2937',
+    color: 'var(--text-primary)',
     margin: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-2)',
   },
+  
+  // Close button - Railway 风格
   closeButton: {
-    padding: '4px',
+    padding: 'var(--space-1)',
     border: 'none',
     backgroundColor: 'transparent',
-    color: '#6b7280',
+    color: 'var(--text-tertiary)',
     cursor: 'pointer',
-    fontSize: '18px',
+    borderRadius: 'var(--radius-default)',
+    fontSize: '16px',
+    transition: 'background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out)',
   },
+  
+  // Modal body
   modalBody: {
-    padding: '20px',
+    padding: 'var(--space-6)',
   },
+  
+  // Modal footer - Railway 风格
   modalFooter: {
     display: 'flex',
     justifyContent: 'flex-end',
-    gap: '12px',
-    padding: '16px 20px',
-    borderTop: '1px solid #e5e7eb',
+    gap: 'var(--space-3)',
+    padding: 'var(--space-4) var(--space-6)',
+    borderTop: '0.5px solid var(--border-subtle)',
+    background: 'var(--bg-elevated)',
   },
+  
+  // Form group
   formGroup: {
-    marginBottom: '16px',
+    marginBottom: 'var(--space-4)',
   },
+  
+  // Label - Railway 文字层级
   label: {
     display: 'block',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: 500,
-    color: '#374151',
-    marginBottom: '6px',
+    color: 'var(--text-secondary)',
+    marginBottom: 'var(--space-2)',
   },
+  
+  // Input - Railway 输入框风格
   input: {
     width: '100%',
-    padding: '10px 12px',
+    padding: 'var(--space-2) var(--space-3)',
     fontSize: '14px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
+    color: 'var(--text-primary)',
+    border: '0.5px solid var(--border-default)',
+    borderRadius: 'var(--radius-default)',
+    backgroundColor: 'var(--bg-overlay)',
     outline: 'none',
     boxSizing: 'border-box',
+    transition: 'border-color var(--duration-fast) var(--ease-out)',
   },
+  
+  // Password wrapper
   passwordWrapper: {
     position: 'relative',
     width: '100%',
   },
+  
   passwordInput: {
     paddingRight: '40px',
   },
-  passwordToggle: {
-    position: 'absolute',
-    right: '10px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    padding: '4px',
-    border: 'none',
-    backgroundColor: 'transparent',
-    color: '#9ca3af',
-    cursor: 'pointer',
-    fontSize: '16px',
+  
+  // Cancel button - Railway 次要按钮
+  cancelButton: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'color 150ms ease-out',
-  },
-  select: {
-    width: '100%',
-    padding: '10px 12px',
-    fontSize: '14px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    outline: 'none',
-    backgroundColor: 'white',
-    cursor: 'pointer',
-    boxSizing: 'border-box',
-  },
-  cancelButton: {
-    padding: '10px 16px',
-    fontSize: '14px',
+    gap: 'var(--space-2)',
+    padding: 'var(--space-2) var(--space-4)',
+    fontSize: '13px',
     fontWeight: 500,
-    color: '#4b5563',
-    backgroundColor: '#f3f4f6',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
+    color: 'var(--text-primary)',
+    backgroundColor: 'transparent',
+    border: '0.5px solid var(--border-default)',
+    borderRadius: 'var(--radius-default)',
     cursor: 'pointer',
+    transition: 'background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out)',
   },
+  
+  // Confirm button - Railway 主按钮
   confirmButton: {
-    padding: '10px 16px',
-    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-2)',
+    padding: 'var(--space-2) var(--space-4)',
+    fontSize: '13px',
     fontWeight: 500,
     color: 'white',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: 'var(--accent)',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-default)',
     cursor: 'pointer',
+    transition: 'background var(--duration-fast) var(--ease-out)',
   },
+  
+  // Delete confirm button - Railway 危险主按钮
   deleteConfirmButton: {
-    padding: '10px 16px',
-    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-2)',
+    padding: 'var(--space-2) var(--space-4)',
+    fontSize: '13px',
     fontWeight: 500,
     color: 'white',
-    backgroundColor: '#dc2626',
+    backgroundColor: 'var(--color-error)',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-default)',
     cursor: 'pointer',
+    transition: 'background var(--duration-fast) var(--ease-out)',
   },
+  
+  // Confirm text
   confirmText: {
     fontSize: '14px',
-    color: '#4b5563',
-    margin: '0 0 16px',
+    color: 'var(--text-secondary)',
+    margin: '0 0 var(--space-4)',
+    lineHeight: 1.5,
+  },
+  
+  // Select - Railway 输入框风格
+  select: {
+    width: '100%',
+    padding: 'var(--space-2) var(--space-3)',
+    fontSize: '14px',
+    color: 'var(--text-primary)',
+    border: '0.5px solid var(--border-default)',
+    borderRadius: 'var(--radius-default)',
+    backgroundColor: 'var(--bg-overlay)',
+    cursor: 'pointer',
+    boxSizing: 'border-box',
+    outline: 'none',
+    transition: 'border-color var(--duration-fast) var(--ease-out)',
   },
 };
 
-// Role badge style helper
+// Role badge style helper - Railway 风格
 export const getRoleBadgeStyle = (role: UserRole): React.CSSProperties => {
-  const colors: Record<UserRole, string> = {
-    admin: '#7c3aed',
-    operator: '#2563eb',
-    viewer: '#6b7280',
+  const colors: Record<UserRole, { bg: string; color: string }> = {
+    admin: { bg: 'var(--accent-muted)', color: 'var(--accent)' },
+    operator: { bg: 'var(--color-info-muted)', color: 'var(--color-info-text)' },
+    viewer: { bg: 'var(--color-neutral-muted)', color: 'var(--color-neutral-text)' },
   };
   return {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '4px',
-    padding: '4px 10px',
-    borderRadius: '6px',
-    fontSize: '12px',
+    gap: 'var(--space-1)',
+    padding: '3px var(--space-3)',
+    borderRadius: '100px',
+    fontSize: '11px',
     fontWeight: 500,
-    backgroundColor: colors[role] + '15',
-    color: colors[role],
+    backgroundColor: colors[role].bg,
+    color: colors[role].color,
   };
 };
 

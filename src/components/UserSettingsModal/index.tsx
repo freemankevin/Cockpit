@@ -189,15 +189,19 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     setLoading(true);
     try {
       const updateData: { username?: string; email?: string; phone?: string } = {};
+      const changedFields: string[] = [];
       
       if (profileForm.username !== currentUser.username) {
         updateData.username = profileForm.username;
+        changedFields.push('username');
       }
       if (profileForm.email !== currentUser.email) {
         updateData.email = profileForm.email;
+        changedFields.push('email');
       }
       if (profileForm.phone !== currentUser.phone) {
         updateData.phone = profileForm.phone;
+        changedFields.push('phone');
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -208,11 +212,17 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       const result = await authApi.updateProfile(updateData);
       if (result.code === 0 && result.data) {
         onUserUpdate(result.data);
-        // Send notification instead of toast
+        // Send specific notification based on what was changed
+        const fieldLabels: Record<string, string> = {
+          username: 'username',
+          email: 'email',
+          phone: 'phone',
+        };
+        const changedLabels = changedFields.map(f => fieldLabels[f]).join(', ');
         onNotification?.({
           type: 'success',
           title: 'Profile Updated',
-          message: 'Your profile has been updated successfully.',
+          message: `Successfully updated: ${changedLabels}`,
         });
       } else {
         errorToast('Error', result.message || 'Failed to update profile');
@@ -252,11 +262,11 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           newPassword: '',
           confirmPassword: '',
         });
-        // Send notification instead of toast
+        // Send specific notification for password change
         onNotification?.({
           type: 'success',
           title: 'Password Changed',
-          message: 'Your password has been changed successfully.',
+          message: 'Your password has been updated successfully. Please use the new password for your next login.',
         });
       } else {
         errorToast('Error', result.message || 'Failed to change password');
@@ -339,7 +349,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               style={{ color: 'var(--text-primary)' }}
             >
               <UserCog className="w-4 h-4 mr-2" style={{ color: 'var(--accent)' }} />
-              User Settings
+              Account Settings
             </h2>
             <button
               onClick={handleClose}

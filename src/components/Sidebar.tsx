@@ -106,6 +106,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'settings', label: 'Settings', icon: Settings },
     ],
     subItems: [
+      { id: 'settings-users', label: 'Users', isSubItem: true, adminOnly: true },
       { id: 'settings-audit', label: 'Audit', isSubItem: true, adminOnly: true },
       { id: 'settings-about', label: 'About', isSubItem: true },
     ],

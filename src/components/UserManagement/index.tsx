@@ -2,10 +2,9 @@ import React from 'react';
 import type { User } from '../../types';
 import { styles, getRoleBadgeStyle, roleLabels } from './styles';
 import { useUserManagement } from './useUserManagement';
-import { UserFormModal, DeleteConfirmModal, ResetPasswordModal, AuditLogsModal } from './Modals';
+import { UserFormModal, DeleteConfirmModal, ResetPasswordModal } from './Modals';
 import {
   Users,
-  BookText,
   Plus,
   Loader2,
   Inbox,
@@ -25,8 +24,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   const {
     users,
     loading,
-    auditLogs,
-    showAuditLogs,
     formData,
     selectedUser,
     showCreateModal,
@@ -35,7 +32,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     showResetPasswordModal,
     formLoading,
     newPassword,
-    setShowAuditLogs,
     setShowCreateModal,
     setShowEditModal,
     setShowDeleteConfirm,
@@ -51,23 +47,59 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     resetForm,
   } = useUserManagement();
 
+  // Button hover handlers - Railway style interactions
+  const handleCreateButtonHover = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.background = 'var(--accent-hover)';
+  };
+  
+  const handleCreateButtonLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.background = 'var(--accent)';
+  };
+
+  const handleActionButtonHover = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.background = 'var(--bg-elevated)';
+    e.currentTarget.style.color = 'var(--text-primary)';
+  };
+  
+  const handleActionButtonLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.background = 'transparent';
+    e.currentTarget.style.color = 'var(--text-tertiary)';
+  };
+
+  const handleDeleteButtonHover = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.background = 'var(--color-error-muted)';
+  };
+  
+  const handleDeleteButtonLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.background = 'transparent';
+  };
+
+  const handleTableRowHover = (e: React.MouseEvent<HTMLTableRowElement>) => {
+    e.currentTarget.style.background = 'var(--bg-overlay)';
+  };
+  
+  const handleTableRowLeave = (e: React.MouseEvent<HTMLTableRowElement>) => {
+    e.currentTarget.style.background = 'transparent';
+  };
+
   return (
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
         <div>
           <h2 style={styles.title}>
-            <Users className="w-6 h-6" style={styles.titleIcon} />
+            <Users className="w-5 h-5" style={styles.titleIcon} />
             User Management
           </h2>
           <p style={styles.subtitle}>Manage system users and permissions</p>
         </div>
         <div style={styles.headerActions}>
-          <button onClick={() => setShowAuditLogs(true)} style={styles.auditButton}>
-            <BookText className="w-4 h-4" />
-            Audit Logs
-          </button>
-          <button onClick={() => { resetForm(); setShowCreateModal(true); }} style={styles.createButton}>
+          <button 
+            onClick={() => { resetForm(); setShowCreateModal(true); }} 
+            style={styles.createButton}
+            onMouseEnter={handleCreateButtonHover}
+            onMouseLeave={handleCreateButtonLeave}
+          >
             <Plus className="w-4 h-4" />
             Create User
           </button>
@@ -77,14 +109,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       {/* Users table */}
       <div style={styles.tableContainer}>
         {loading ? (
+          // Railway style loading - spinner only, no text logs
           <div style={styles.loading}>
             <Loader2 className="w-5 h-5 animate-spin" style={styles.loadingIcon} />
-            Loading...
           </div>
         ) : users.length === 0 ? (
+          // Empty state - Railway style
           <div style={styles.empty}>
-            <Inbox className="w-12 h-12" style={styles.emptyIcon} />
-            <p>No users found</p>
+            <Inbox className="w-10 h-10" style={styles.emptyIcon} />
+            <p style={styles.emptyText}>No users found</p>
           </div>
         ) : (
           <table style={styles.table}>
@@ -101,13 +134,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} style={styles.tr}>
+                <tr 
+                  key={user.id} 
+                  style={styles.tr}
+                  onMouseEnter={handleTableRowHover}
+                  onMouseLeave={handleTableRowLeave}
+                >
                   <td style={styles.td}>
                     <div style={styles.userName}>
                       <div style={styles.avatar}>
                         {user.username.charAt(0).toUpperCase()}
                       </div>
-                      <span>{user.username}</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{user.username}</span>
                       {user.id === currentUser.id && (
                         <span style={styles.currentUserBadge}>Current</span>
                       )}
@@ -116,11 +154,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                   <td style={styles.td}>
                     <span style={getRoleBadgeStyle(user.role)}>
                       {user.role === 'admin' ? (
-                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <ShieldCheck className="w-3 h-3" />
                       ) : user.role === 'operator' ? (
-                        <Wrench className="w-3.5 h-3.5" />
+                        <Wrench className="w-3 h-3" />
                       ) : (
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-3 h-3" />
                       )}
                       {roleLabels[user.role]}
                     </span>
@@ -133,25 +171,43 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                     </span>
                   </td>
                   <td style={styles.td}>
-                    {user.last_login_at ? new Date(user.last_login_at).toLocaleString('en-US') : 'Never'}
+                    {user.last_login_at 
+                      ? new Date(user.last_login_at).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : 'Never'}
                   </td>
                   <td style={styles.td}>
                     <div style={styles.actions}>
-                      <button onClick={() => openEditModal(user)} style={styles.actionButton} title="Edit">
+                      <button 
+                        onClick={() => openEditModal(user)} 
+                        style={styles.actionButton} 
+                        title="Edit"
+                        onMouseEnter={handleActionButtonHover}
+                        onMouseLeave={handleActionButtonLeave}
+                      >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => { setSelectedUser(user); setShowResetPasswordModal(true); }}
                         style={styles.actionButton}
                         title="Reset Password"
+                        onMouseEnter={handleActionButtonHover}
+                        onMouseLeave={handleActionButtonLeave}
                       >
                         <Key className="w-4 h-4" />
                       </button>
-                      {user.id !== currentUser.id && (
+                      {/* Cannot delete self or default admin user */}
+                      {user.id !== currentUser.id && user.username !== 'admin' && (
                         <button
                           onClick={() => { setSelectedUser(user); setShowDeleteConfirm(true); }}
                           style={styles.deleteButton}
                           title="Delete"
+                          onMouseEnter={handleDeleteButtonHover}
+                          onMouseLeave={handleDeleteButtonLeave}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -204,12 +260,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         onClose={() => { setShowResetPasswordModal(false); setNewPassword(''); }}
         onConfirm={handleResetPassword}
         onPasswordChange={setNewPassword}
-      />
-
-      <AuditLogsModal
-        visible={showAuditLogs}
-        logs={auditLogs}
-        onClose={() => setShowAuditLogs(false)}
       />
     </div>
   );
